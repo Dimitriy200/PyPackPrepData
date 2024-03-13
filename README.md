@@ -2,4 +2,4 @@
 <a>https://test.pypi.org/project/preprocess-data/0.0.1/</a>
 
 <h2>Установка</h2>
-`pip install -i https://test.pypi.org/simple/ preprocess-data==0.0.1`
+``` pip install -i https://test.pypi.org/simple/ preprocess-data==0.0.1 ```
