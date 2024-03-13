@@ -43,3 +43,5 @@ class PrepData():
             newDataFrame.to_csv(outFilesList[url])
         
         return status["Access"]
+    
+    
