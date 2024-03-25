@@ -40,8 +40,16 @@ class PrepData():
             dataFrame = pd.read_csv(url)
             newDataFrame = pipline.fit_transform(dataFrame)
             newDataFrame = pd.DataFrame(newDataFrame, columns=pipline['scaler'].get_feature_names_out(dataFrame.columns))
-            newDataFrame.to_csv(outFilesList[url])
+            newDataFrame.to_pickle(outFilesList[url])
         
         return status["Access"]
     
+
+    def is_pass(dataFrame: pd.DataFrame):
+        res: bool
+
+        
+
+        return res
+
     
