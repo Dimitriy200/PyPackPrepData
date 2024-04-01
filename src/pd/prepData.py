@@ -1,5 +1,6 @@
 import pandas as pd
 import os
+import pickle
 
 from sklearn.impute import SimpleImputer, KNNImputer
 from sklearn.preprocessing import StandardScaler
@@ -11,11 +12,12 @@ class PrepData():
 
     def __init__(self):
         self.__defaultPipline = PrepData.createDefaultPipline()
+        
+        # Код состояния для функций
         self.status: bool
 
 
-    def createDefaultPipline(self):
-
+    def createDefault_Pipline(self):
         status_log = ["Create pipline successfull", "Create pipline error"]
 
         try:
@@ -29,17 +31,66 @@ class PrepData():
         except:
             print(status_log[1])
             return 0
+    
+
+    def save_Pipeline(self, saved_pipeline: Pipeline, save_path: str):
+        status_log = ["Save pipline successfull", "Save pipline error"]
+
+        try:
+            with open(save_path, 'wb') as handle:
+                save_pik_pipeline = pickle.dumps(saved_pipeline)
+            
+            print(status_log[0])
+            self.status = True
+            return self.status
+        
+        except:
+            print(status_log[1])
+            self.status = False
+            return self.status
 
 
+    def load_Pipeline(self, load_path: str) -> Pipeline:
+        status_log = ["Load pipline successfull", "Load pipline error"]
 
+        try:
+            with open(load_path, 'rb') as handle:
+                save_pik_pipeline = pickle.load(handle)
+
+            print(status_log[0])
+            self.status = True
+            return save_pik_pipeline
+        
+        except:
+            print(status_log[1])
+            self.status = False
+            return 0
+
+
+    def fit_pipeline(self, pipeline: Pipeline, fit_data: pd.DataFrame) -> Pipeline:
+        status_log = ["Fit pipline successfull", "Fit pipline error"]
+
+        try:
+            pipeline.fit(X = fit_data)
+
+            print(status_log[1])
+            self.status = True
+            return pipeline
+        except:
+            print(status_log[0])
+            self.status = False
+            return 0
+
+
+    # Вызов дефолтного Pipline - внутренняя функция
     @property
     def defaultPipline(self):
         return self.__defaultPipline
 
 
     # B inpFilesList и outFilesList указывать полный путь
-    def processing_data(self,
-                        inpFilesList: list,
+    def employ_Pipline(self,
+                        inpFilesList: list, # путь к папке ()
                         outFilesList: list,
                         pipline: Pipeline = defaultPipline):
         
@@ -55,6 +106,7 @@ class PrepData():
             print(status_log[0])
             self.status = True
             return self.status
+        
         except:
             print(status_log[1])
             self.status = False
@@ -62,11 +114,9 @@ class PrepData():
 
     
 
-    def is_pass(dataFrame: pd.DataFrame):
+    def is_null(dataFrame: pd.DataFrame):
         res: bool
         
         
 
         return res
-
-    
