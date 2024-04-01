@@ -71,11 +71,12 @@ class PrepData():
         status_log = ["Fit pipline successfull", "Fit pipline error"]
 
         try:
-            pipeline.fit(X = fit_data)
+            new_pipeline = pipeline.fit(fit_data)
 
             print(status_log[1])
             self.status = True
-            return pipeline
+            return new_pipeline
+        
         except:
             print(status_log[0])
             self.status = False
@@ -90,16 +91,24 @@ class PrepData():
 
     # B inpFilesList и outFilesList указывать полный путь
     def employ_Pipline(self,
-                        inpFilesList: list, # путь к папке ()
-                        outFilesList: list,
+                        inp_patch: str, # путь к папке ()
+                        out_patch: str,
                         pipline: Pipeline = defaultPipline):
         
         status_log = ["Preprocess data finished successfull", "Preprocess data finished error"]
 
+        # Сохраняем все документы в папке в лист
+        inpFilesList = os.listdir(inp_patch)
+        outFilesList = inpFilesList
+
+        for outfile in outFilesList:
+            time_name = outfile
+            os.rename(outfile, "out_" + time_name)
+
+        # Применение
         try:
             for url in range(len(inpFilesList)):
                 dataFrame = pd.read_csv(url)
-                newDataFrame = pipline.fit_transform(dataFrame)
                 newDataFrame = pd.DataFrame(newDataFrame, columns=pipline['scaler'].get_feature_names_out(dataFrame.columns))
                 newDataFrame.to_pickle(outFilesList[url])
             
