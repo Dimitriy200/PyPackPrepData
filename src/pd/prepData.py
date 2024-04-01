@@ -91,26 +91,39 @@ class PrepData():
 
     # B inpFilesList и outFilesList указывать полный путь
     def employ_Pipline(self,
-                        inp_patch: str, # путь к папке ()
-                        out_patch: str,
+                        inp_dir: str,
+                        out_dir: str,
                         pipline: Pipeline = defaultPipline):
         
         status_log = ["Preprocess data finished successfull", "Preprocess data finished error"]
 
-        # Сохраняем все документы в папке в лист
-        inpFilesList = os.listdir(inp_patch)
+        # Получаем все документы в папке
+        inpFilesList = os.listdir(inp_dir)
         outFilesList = inpFilesList
+        
+        for fl in inpFilesList:
+            print(fl)
 
-        for outfile in outFilesList:
-            time_name = outfile
-            os.rename(outfile, "out_" + time_name)
+        # На конце выходной строки дирректории должна стоять "/"
+        if inp_dir[-1] != '/':
+            inp_dir = f"{inp_dir}/"
+        if out_dir[-1] != '/':
+            out_dir = f"{out_dir}/"
 
         # Применение
         try:
-            for url in range(len(inpFilesList)):
-                dataFrame = pd.read_csv(url)
-                newDataFrame = pd.DataFrame(newDataFrame, columns=pipline['scaler'].get_feature_names_out(dataFrame.columns))
-                newDataFrame.to_pickle(outFilesList[url])
+            for file in inpFilesList:
+                if file == ".gitkeep":
+                    continue
+                    
+                print("    Processed -> ", file)
+
+                dataFrame = pd.read_csv(inp_dir + file)
+                newDataFrame = pd.DataFrame(dataFrame, columns=pipline['scaler'].get_feature_names_out(dataFrame.columns))
+                
+                # Сохранение
+                filename, extension = os.path.splitext(file)
+                newDataFrame.to_pickle(f"{out_dir}new_{filename}.pickle")
             
             print(status_log[0])
             self.status = True
