@@ -91,9 +91,10 @@ class PrepData():
 
     # B inpFilesList и outFilesList указывать полный путь
     def employ_Pipline(self,
+                       df: pd.DataFrame,
                         inp_dir: str,
                         out_dir: str,
-                        pipline: Pipeline = defaultPipline):
+                        pipline: Pipeline = defaultPipline,) -> bool:
         
         status_log = ["Preprocess data finished successfull", "Preprocess data finished error"]
 
@@ -101,6 +102,15 @@ class PrepData():
         inpFilesList = os.listdir(inp_dir)
         outFilesList = inpFilesList
         
+        # Проверяем датасет на пригодность
+        if self.check_type(df):
+            print("Dataset is GOOD")
+
+        else:
+            print("Dataset is BAD")
+            self.status = False
+            return self.status
+
         for fl in inpFilesList:
             print(fl)
 
@@ -135,10 +145,25 @@ class PrepData():
             return self.status
 
     
+    def check_type(self, dataset : pd.DataFrame) -> bool:
+    
+        check_type1: type = type(0.0)
+        check_type2: type = type(0)
 
-    def is_null(dataFrame: pd.DataFrame):
-        res: bool
-        
-        
+        colums = dataset.columns.tolist()
 
-        return res
+        status_log = ["Check data finished successfull", "Check data finished error"]
+
+        for col in colums:
+            for var in dataset[col]:
+                if check_type1 == type(var) or check_type2 == type(var):
+                    continue
+                
+                else:
+                    print(status_log[1])
+                    self.status = False
+                    return self.status
+                
+        print(status_log[0])
+        self.status = True
+        return self.status
