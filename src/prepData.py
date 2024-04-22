@@ -15,7 +15,7 @@ class PrepData:
 
     def __init__(self):
         #11
-        self.__defaultPipline = PrepData.createDefault_Pipline()
+        self.__defaultPipline = self.createDefault_Pipline()
         
         # Код состояния для функций
         self.status: bool
@@ -26,7 +26,8 @@ class PrepData:
         return self.__defaultPipline
     
     
-    @staticmethod
+    #@staticmethod
+    @classmethod
     def createDefault_Pipline(self) -> Pipeline:
         
         status_log = ["Create pipline successfull", "Create pipline error"]
@@ -46,6 +47,7 @@ class PrepData:
             return False
     
 
+    @classmethod
     def save_Pipeline(self, saved_pipeline: Pipeline, save_path: str) -> bool:
         status_log = ["Save pipline successfull", "Save pipline error"]
 
@@ -61,7 +63,9 @@ class PrepData:
             return self.status
 
 
+    @classmethod
     def load_Pipeline(self, load_path: str) -> Pipeline:
+
         status_log = ["Load pipline successfull", "Load pipline error"]
 
         try:
@@ -76,6 +80,7 @@ class PrepData:
             return 0
 
 
+    @classmethod
     def fit_pipeline(self,
                      pipeline: Pipeline,
                      fit_data: np.array)-> Pipeline:
@@ -96,11 +101,12 @@ class PrepData:
             return self.status
 
 
+    @classmethod
     def employ_Pipline(self,
-                       dataFrame: pd.DataFrame,
+                        dataFrame: np.array,
                         inp_dir: str,       # B inpFilesList и outFilesList указывать полный путь
                         out_dir: str,
-                        pipline: Pipeline = defaultPipline,) -> bool:
+                        pipline: Pipeline = defaultPipline) -> bool:
         
         status_log = ["Preprocess data finished successfull", "Preprocess data finished error"]
         get_doc_log = ["Getting a list of documents...", "Documents have been received"]
@@ -159,6 +165,7 @@ class PrepData:
 #           --- Service Functions --- 
 
 
+    @classmethod
     def start_fit_pipeline(self,
                             pipeline: Pipeline, 
                             fit_data: np.array) -> Pipeline:
@@ -176,6 +183,7 @@ class PrepData:
             return 0
 
 
+    @classmethod
     def to_standardization_df(self, dataFrame: np.array) -> np.array:
     
         status_log = ["Standartization dataframe successfull", "Standartization dataframe error"]
@@ -194,6 +202,7 @@ class PrepData:
 
 
     # 1 - Добавление столбца с индексами
+    @classmethod
     def add_col_indexes(self,
                         dataFrame: np.array) -> np.array:
         
@@ -212,6 +221,7 @@ class PrepData:
 
             dataFrame = np.insert(dataFrame, 0, indexses, axis= 1)
 
+            print(dataFrame[:1,:])
             self.out_info(True, status_log[0])
             return dataFrame
         
@@ -221,6 +231,7 @@ class PrepData:
 
 
     # 2 - Удаление 0-й строки с названиями столбцов
+    @classmethod
     def delete_col_names(self, dataFrame: np.array) -> np.array:
         
         status_log = ["Delete columns with names in dataframe successfull", "Delete columns with names in dataframe error"]
@@ -237,6 +248,7 @@ class PrepData:
 
 
     # 3 - Удаление строк с пропусками
+    @classmethod
     def delete_nan_str(self, dataFrame: np.array) -> np.array:
     
         status_log = ["Delete NULL lines in dataframe successfull", "Delete NULL lines in dataframe error"]
@@ -265,12 +277,13 @@ class PrepData:
             return self.status
 
 
+    @classmethod
     def check_nan_dataFrame(self, dataset: np.array):
 
         status_log = ["Check NULL values in dataframe successfull", "Check NULL values in dataframe error"]
 
         try:
-            dataset_v = np.delete(dataset, (0), axis=0)
+            #dataset_v = np.delete(dataset, (0), axis=0)
             res: bool
             res = False
 
@@ -281,7 +294,7 @@ class PrepData:
                         res = True
                         return res
             
-            self.out_info(True, status_log[0])
+            self.out_info(True, status_log[0] + f"Result is --> {res}")
             return res
         
         except:
@@ -289,8 +302,8 @@ class PrepData:
             return self.status
 
 
+    @classmethod
     def out_info(self, status: bool, text: str):
-        
         print(text)
         self.status = status
 
