@@ -287,7 +287,7 @@ class PrepData:
             res: bool
             res = False
 
-            for st in dataset_v:
+            for st in dataset:
                 for col in st:
                     # print(f"{col} --> {type(col)}")
                     if(np.isnan(col)):
