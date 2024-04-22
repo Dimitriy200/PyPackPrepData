@@ -6,6 +6,8 @@ import numpy as np
 from sklearn.impute import SimpleImputer, KNNImputer
 from sklearn.preprocessing import StandardScaler
 from sklearn.pipeline import Pipeline
+from numpy import genfromtxt
+
 
 
 class PrepData:
@@ -26,6 +28,7 @@ class PrepData:
     
     @staticmethod
     def createDefault_Pipline(self) -> Pipeline:
+        
         status_log = ["Create pipline successfull", "Create pipline error"]
 
         try:
@@ -50,13 +53,11 @@ class PrepData:
             with open(save_path, 'wb') as handle:
                 save_pik_pipeline = pickle.dumps(saved_pipeline)
             
-            print(status_log[0])
-            self.status = True
+            self.out_info(True, status_log[0])
             return self.status
         
         except:
-            print(status_log[1])
-            self.status = False
+            self.out_info(False, status_log[1])
             return self.status
 
 
@@ -67,13 +68,11 @@ class PrepData:
             with open(load_path, 'rb') as handle:
                 save_pik_pipeline = pickle.load(handle)
 
-            print(status_log[0])
-            self.status = True
+            self.out_info(True, status_log[0])
             return save_pik_pipeline
         
         except:
-            print(status_log[1])
-            self.status = False
+            self.out_info(False, status_log[1])
             return 0
 
 
@@ -83,34 +82,46 @@ class PrepData:
         
         status_log = ["Check data and fit pipeline successfull", "Check data and fit pipeline error"]
 
-        while (self.check_nan_dataFrame(fit_data) == False):
-            self.to_standardization_df(fit_data)
-                
-        self.start_fit_pipeline(pipeline, fit_data)
+        try:
+            while (self.check_nan_dataFrame(fit_data) == False):
+                fit_data = self.to_standardization_df(fit_data)
+                    
+            pipeline = self.start_fit_pipeline(pipeline, fit_data)
 
+            self.out_info(True, status_log[0])
+            return pipeline
+        
+        except:
+            self.out_info(False, status_log[1])
+            return self.status
 
 
     def employ_Pipline(self,
-                       df: pd.DataFrame,
+                       dataFrame: pd.DataFrame,
                         inp_dir: str,       # B inpFilesList и outFilesList указывать полный путь
                         out_dir: str,
                         pipline: Pipeline = defaultPipline,) -> bool:
         
         status_log = ["Preprocess data finished successfull", "Preprocess data finished error"]
+        get_doc_log = ["Getting a list of documents...", "Documents have been received"]
+        check_dataset_log = ["Getting a list of documents...", "Documents have been received"]
 
         # Получаем все документы в папке
+        print(get_doc_log[0])
         inpFilesList = os.listdir(inp_dir)
         outFilesList = inpFilesList
+        print(get_doc_log[1])
         
-        # Проверяем датасет на пригодность
-        if self.check_type(df):
-            print("Dataset is GOOD")
+        # Проверяем датасет на пригодность (отсутствие пропусков)
+        print(check_dataset_log[0])
+        if self.check_nan_dataFrame(dataFrame):
+            print("Dataset is GOOD  Starting employ pipeline...")
 
         else:
-            print("Dataset is BAD")
-            self.status = False
-            return self.status
+            print("Dataset is BAD Starting standartization dataframe...")
+            self.to_standardization_df(dataFrame)
 
+        # Вывод списка файлов в диррекории
         for fl in inpFilesList:
             print(fl)
 
@@ -128,20 +139,20 @@ class PrepData:
                     
                 print("    Processed -> ", file)
 
-                dataFrame = pd.read_csv(inp_dir + file)
+                #dataFrame = pd.read_csv(inp_dir + file)
+                dataFrame = genfromtxt(inp_dir + file, delimiter=',')
                 newDataFrame = pd.DataFrame(dataFrame, columns=pipline['scaler'].get_feature_names_out(dataFrame.columns))
-                
+
                 # Сохранение
                 filename, extension = os.path.splitext(file)
                 newDataFrame.to_pickle(f"{out_dir}new_{filename}.pickle")
             
-            print(status_log[0])
-            self.status = True
+            
+            self.out_info(True, status_log[0])
             return self.status
         
         except:
-            print(status_log[1])
-            self.status = False
+            self.out_info(False, status_log[1])
             return self.status
 
 
@@ -157,62 +168,131 @@ class PrepData:
         try:
             new_pipeline = pipeline.fit(fit_data)
 
-            print(status_log[1])
-            self.status = True
+            self.out_info(True, status_log[0])
             return new_pipeline
         
         except:
-            print(status_log[0])
-            self.status = False
+            self.out_info(False, status_log[1])
             return 0
 
 
-    # 1 - Добавление столбца с индексами
-    # 2 - Удаление 0-й строки с названиями столбцов
-    # 3 - Удаление строк с пропусками
-    def to_standardization_df(dataframe: np.array) -> np.array:
+    def to_standardization_df(self, dataFrame: np.array) -> np.array:
     
-        # 1 - Добавление столбца с индексами
-        str_count, col_count = dataframe.shape
-        indexses = []
-        indexses.append(0)
+        status_log = ["Standartization dataframe successfull", "Standartization dataframe error"]
 
-        print("str -->", str_count,
-            "\ncol -->", col_count)
+        try:
+            dataFrame = self.add_col_indexes(dataFrame)
+            dataFrame = self.delete_col_names(dataFrame)
+            dataFrame = self.delete_nan_str(dataFrame)
+
+            self.out_info(True, status_log[0])
+            return dataFrame
         
-        for i in range(str_count-1):
-            indexses.append(i)
+        except:
+            self.out_info(False, status_log[1])
+            return self.status
+
+
+    # 1 - Добавление столбца с индексами
+    def add_col_indexes(self,
+                        dataFrame: np.array) -> np.array:
         
-        dataframe = np.insert(dataframe, 0, indexses, axis= 1)
+        status_log = ["Add column with indexes in dataframe successfull", "Add column with indexes in dataframe error"]
 
+        try:
+            str_count, col_count = dataFrame.shape
+            indexses = []
+            indexses.append(0)
 
-        # 2 - Удаление 0-й строки с названиями столбцов
-        dataframe = dataframe[1:, 0:]
+            print("str -->", str_count,
+                "\ncol -->", col_count)
+            
+            for i in range(str_count-1):
+                indexses.append(i)
 
+            dataFrame = np.insert(dataFrame, 0, indexses, axis= 1)
 
-        # 3 - Удаление строк с пропусками
+            self.out_info(True, status_log[0])
+            return dataFrame
         
+        except:
+            self.out_info(False, status_log[1])
+            return self.status
 
-        return dataframe
 
-
-    def check_nan_dataFrame(dataset: np.array):
-
-        dataset_v = np.delete(dataset, (0), axis=0)
-        res: bool
-        res = False
-
-        for st in dataset_v:
-            for col in st:
-                # print(f"{col} --> {type(col)}")
-                if(np.isnan(col)):
-                    res = True
-                    return res
+    # 2 - Удаление 0-й строки с названиями столбцов
+    def delete_col_names(self, dataFrame: np.array) -> np.array:
         
-        return res
+        status_log = ["Delete columns with names in dataframe successfull", "Delete columns with names in dataframe error"]
+
+        try:
+            dataFrame = dataFrame[1:, 0:]
+
+            self.out_info(True, status_log[0])
+            return dataFrame
+        
+        except:
+            self.out_info(False, status_log[1])
+            return self.status
 
 
+    # 3 - Удаление строк с пропусками
+    def delete_nan_str(self, dataFrame: np.array) -> np.array:
+    
+        status_log = ["Delete NULL lines in dataframe successfull", "Delete NULL lines in dataframe error"]
 
+        try:
+            line, col  = dataFrame.shape
+            res_dataFrame = np.empty((1, col))
+
+            for line in dataFrame:
+
+                line = np.array([line])
+                print(line)
+
+                if(self.check_nan_dataFrame(line) == False):
+                    res_dataFrame = np.vstack((res_dataFrame, line))
+                else:
+                    continue
+
+            res_dataFrame = self.delete_col_names(res_dataFrame)
+            
+            self.out_info(True, status_log[0])
+            return res_dataFrame
+        
+        except:
+            self.out_info(False, status_log[1])
+            return self.status
+
+
+    def check_nan_dataFrame(self, dataset: np.array):
+
+        status_log = ["Check NULL values in dataframe successfull", "Check NULL values in dataframe error"]
+
+        try:
+            dataset_v = np.delete(dataset, (0), axis=0)
+            res: bool
+            res = False
+
+            for st in dataset_v:
+                for col in st:
+                    # print(f"{col} --> {type(col)}")
+                    if(np.isnan(col)):
+                        res = True
+                        return res
+            
+            self.out_info(True, status_log[0])
+            return res
+        
+        except:
+            self.out_info(False, status_log[1])
+            return self.status
+
+
+    def out_info(self, status: bool, text: str):
+        
+        print(text)
+        self.status = status
 
 
 
