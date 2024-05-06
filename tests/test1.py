@@ -5,7 +5,7 @@ import pandas as pd
 import pytest
 import sys
 
-from prepData import PrepData
+from PrepData import prepData
 
 
 Small_BAD_test_FD001 = pd.read_csv("C:/Users/Dmitriy/Desktop/Univer/Diplom/diplom_autoencoder/data/raw/Small_BAD_test_FD001.csv")

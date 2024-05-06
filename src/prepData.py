@@ -20,7 +20,7 @@ class PrepData:
         # Код состояния для функций
         self.status: bool
 
-# Вызов дефолтного Pipline - внутренняя функция
+    # Вызов дефолтного Pipline - внутренняя функция
     @property
     def defaultPipline(self):
         return self.__defaultPipline
@@ -88,7 +88,7 @@ class PrepData:
         status_log = ["Check data and fit pipeline successfull", "Check data and fit pipeline error"]
 
         try:
-            while (self.check_nan_dataFrame(fit_data) == False):
+            while (self.is_nan_dataFrame_Line(fit_data) == False):
                 fit_data = self.to_standardization_df(fit_data)
                     
             pipeline = self.start_fit_pipeline(pipeline, fit_data)
@@ -103,33 +103,12 @@ class PrepData:
 
     @classmethod
     def employ_Pipline(self,
-                        dataFrame: np.array,
                         inp_dir: str,       # B inpFilesList и outFilesList указывать полный путь
                         out_dir: str,
                         pipline: Pipeline = defaultPipline) -> bool:
         
-        status_log = ["Preprocess data finished successfull", "Preprocess data finished error"]
-        get_doc_log = ["Getting a list of documents...", "Documents have been received"]
-        check_dataset_log = ["Getting a list of documents...", "Documents have been received"]
-
-        # Получаем все документы в папке
-        print(get_doc_log[0])
-        inpFilesList = os.listdir(inp_dir)
-        outFilesList = inpFilesList
-        print(get_doc_log[1])
-        
-        # Проверяем датасет на пригодность (отсутствие пропусков)
-        print(check_dataset_log[0])
-        if self.check_nan_dataFrame(dataFrame):
-            print("Dataset is GOOD  Starting employ pipeline...")
-
-        else:
-            print("Dataset is BAD Starting standartization dataframe...")
-            self.to_standardization_df(dataFrame)
-
-        # Вывод списка файлов в диррекории
-        for fl in inpFilesList:
-            print(fl)
+        status_log  =           ["Preprocess data finished successfull",        "Preprocess data finished error"]
+        get_doc_log =           ["Getting a list of documents...",              "Documents have been received"]
 
         # На конце выходной строки дирректории должна стоять "/"
         if inp_dir[-1] != '/':
@@ -137,29 +116,47 @@ class PrepData:
         if out_dir[-1] != '/':
             out_dir = f"{out_dir}/"
 
-        # Применение
-        try:
-            for file in inpFilesList:
-                if file == ".gitkeep":
-                    continue
-                    
-                print("    Processed -> ", file)
-
-                #dataFrame = pd.read_csv(inp_dir + file)
-                dataFrame = genfromtxt(inp_dir + file, delimiter=',')
-                newDataFrame = pd.DataFrame(dataFrame, columns=pipline['scaler'].get_feature_names_out(dataFrame.columns))
-
-                # Сохранение
-                filename, extension = os.path.splitext(file)
-                newDataFrame.to_pickle(f"{out_dir}new_{filename}.pickle")
-            
-            
-            self.out_info(True, status_log[0])
-            return self.status
+        # Получаем все документы в папке
+        print(get_doc_log[0])
+        inpFilesList = os.listdir(inp_dir)
+        outFilesList = inpFilesList
         
-        except:
-            self.out_info(False, status_log[1])
-            return self.status
+        # Вывод списка файлов в диррекории
+        for fl in inpFilesList:
+            print("   .../" + fl)
+            
+        print(get_doc_log[1])
+
+        # Применение
+        for file in inpFilesList:
+            if file == ".gitkeep":
+                continue
+            
+            print("  Processed --> ", file)
+
+            # Загружаем i-тый фаил
+            dataFrame = genfromtxt(inp_dir + file, delimiter = ',')
+            
+            # Проверяем датасет на пригодность (отсутствие пропусков)
+            for line in dataFrame:
+                if (self.is_nan_dataFrame_Line(line) == False):
+                    continue
+                else:
+                    print("Dataset is BAD Starting standartization dataframe...")
+                    self.to_standardization_df(dataFrame)
+                    break
+            
+            print("Dataset is GOOD  Starting employ pipeline...")
+            
+            # newDataFrame = pd.DataFrame(dataFrame, columns = pipline['scaler'].get_feature_names_out(dataFrame.columns))
+            newDataFrame = pipline.fit_transform(dataFrame)
+
+            # Сохранение
+            fileName = out_dir + "New_" + file + ".csv"
+            np.savetxt(fileName, newDataFrame, delimiter = ",")
+        
+        self.out_info(True, status_log[0])
+        return True
 
 
 #           --- Service Functions --- 
@@ -190,7 +187,7 @@ class PrepData:
 
         try:
             dataFrame = self.add_col_indexes(dataFrame)
-            dataFrame = self.delete_col_names(dataFrame)
+            dataFrame = self.delete_names(dataFrame)
             dataFrame = self.delete_nan_str(dataFrame)
 
             self.out_info(True, status_log[0])
@@ -208,36 +205,40 @@ class PrepData:
         
         status_log = ["Add column with indexes in dataframe successfull", "Add column with indexes in dataframe error"]
 
-        try:
-            str_count, col_count = dataFrame.shape
-            indexses = []
-            indexses.append(0)
+        # try:
+        str_count, col_count = dataFrame.shape
+        indexses = []
+        coef_if_empty = 0
 
-            print("str -->", str_count,
-                "\ncol -->", col_count)
-            
-            for i in range(str_count-1):
-                indexses.append(i)
+        print("str -->", str_count,
+            "\ncol -->", col_count)
 
-            dataFrame = np.insert(dataFrame, 0, indexses, axis= 1)
-
-            print(dataFrame[:1,:])
-            self.out_info(True, status_log[0])
-            return dataFrame
+        if (self.is_nan_dataFrame_Line(dataFrame[0, :])):
+            indexses.append(np.nan)
+            coef_if_empty = 1
         
-        except:
-            self.out_info(False, status_log[1])
-            return self.status
+        for i in range(str_count - coef_if_empty):
+            indexses.append(i)
+
+        dataFrame = np.insert(dataFrame, 0, indexses, axis= 1)
+
+        self.out_info(True, status_log[0])
+        return dataFrame
+        
+        # except:
+        #     self.out_info(False, status_log[1])
+        #     return self.status
 
 
     # 2 - Удаление 0-й строки с названиями столбцов
     @classmethod
-    def delete_col_names(self, dataFrame: np.array) -> np.array:
+    def delete_names(self, dataFrame: np.array) -> np.array:
         
         status_log = ["Delete columns with names in dataframe successfull", "Delete columns with names in dataframe error"]
 
         try:
-            dataFrame = dataFrame[1:, 0:]
+            if(self.is_named_col(dataFrame) == True):
+                dataFrame = dataFrame[1:, 0:]
 
             self.out_info(True, status_log[0])
             return dataFrame
@@ -252,54 +253,56 @@ class PrepData:
     def delete_nan_str(self, dataFrame: np.array) -> np.array:
     
         status_log = ["Delete NULL lines in dataframe successfull", "Delete NULL lines in dataframe error"]
+        status = False
 
-        try:
-            line, col  = dataFrame.shape
-            res_dataFrame = np.empty((1, col))
+        str, col  = dataFrame.shape
+        print(f"str = {str}\ncol = {col}")
+        res_dataFrame = np.zeros(col)
 
-            for line in dataFrame:
+        for line in dataFrame:
+            if(self.is_nan_dataFrame_Line(line) == False):
+                res_dataFrame = np.vstack((res_dataFrame, line))
+                print(f"res_dataFrame = {res_dataFrame}")
+            else:
+                continue
 
-                line = np.array([line])
-                print(line)
-
-                if(self.check_nan_dataFrame(line) == False):
-                    res_dataFrame = np.vstack((res_dataFrame, line))
-                else:
-                    continue
-
-            res_dataFrame = self.delete_col_names(res_dataFrame)
-            
-            self.out_info(True, status_log[0])
-            return res_dataFrame
+        res_dataFrame = res_dataFrame[1:, :]
         
-        except:
-            self.out_info(False, status_log[1])
-            return self.status
+        self.out_info(True, status_log[0])
+        return res_dataFrame
 
 
     @classmethod
-    def check_nan_dataFrame(self, dataset: np.array):
+    def is_nan_dataFrame_Line(self, dataset: np.array) -> bool:
 
         status_log = ["Check NULL values in dataframe successfull", "Check NULL values in dataframe error"]
+        self.status = False
 
-        try:
-            #dataset_v = np.delete(dataset, (0), axis=0)
-            res: bool
-            res = False
-
-            for st in dataset:
-                for col in st:
-                    # print(f"{col} --> {type(col)}")
-                    if(np.isnan(col)):
-                        res = True
-                        return res
+        for st in dataset:
+            if(np.isnan(st)):
+                self.status = True
+                self.out_info(self.status, status_log[0] + f" result is {self.status}")
+                return self.status
             
-            self.out_info(True, status_log[0] + f"Result is --> {res}")
-            return res
+        self.out_info(self.status, status_log[0] + f" result is {self.status}")
+        return self.status
+
+
+    @classmethod
+    def is_named_col(self, dataset: np.array) -> bool:
+
+        status_log = ["Check first string dataframe successfull", "Check first string dataframe error"]
+        self.status = False
+        first_str = dataset[0, :]
+
+        for val in first_str:
+            if(np.isnan(val)):
+                self.status = True
+            else:
+                self.status = False
+                return self.status
         
-        except:
-            self.out_info(False, status_log[1])
-            return self.status
+        return self.status
 
 
     @classmethod
