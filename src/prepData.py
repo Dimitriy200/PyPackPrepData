@@ -152,10 +152,81 @@ class PrepData:
             newDataFrame = pipline.fit_transform(dataFrame)
 
             # Сохранение
-            fileName = out_dir + "New_" + file + ".csv"
+            fileName = out_dir + "New_" + file
             np.savetxt(fileName, newDataFrame, delimiter = ",")
         
         self.out_info(True, status_log[0])
+        return True
+
+
+    @classmethod
+    def differentiation_on_anomaly(dataFrame: np.array,
+                               last_anomaly: int,
+                               out_dir: str,
+                               file_name: str) -> bool:
+    
+        count_unit_number = dataFrame[1, 0]
+        count_time_cycles = 1
+
+        current_str_num = 0
+        count = 0
+
+        last_time_cycles = []
+
+        str_df, col_df  = dataFrame.shape
+
+        normal_df = np.zeros(col_df)
+        anomalmal_df = np.zeros(col_df)
+
+        unit_number = 0
+
+        fileName_Normal_DF = out_dir + "New_NORMAL" + file_name + ".csv"
+        fileName_Anomal_DF = out_dir + "New_ANOMAL" + file_name + ".csv"
+        
+
+        for str in dataFrame:
+            unit_number = dataFrame[current_str_num, 0]
+            #print(unit_number)
+
+            if(count_unit_number != unit_number or
+            current_str_num == str_df - 1):
+                last_time_cycles.append(count_time_cycles)
+                count_unit_number = unit_number
+            
+            count_time_cycles += 1
+            current_str_num += 1
+
+
+        count_unit_number = dataFrame[1, 0]
+        count_time_cycles = 1
+        current_str_num = 0
+
+        for str in dataFrame:
+
+            unit_number = dataFrame[current_str_num, 0]
+
+            if(count_unit_number != unit_number):
+                count += 1
+                count_unit_number = unit_number
+
+            barrer = last_time_cycles[count] - last_anomaly
+
+            if(count_time_cycles < barrer):
+                normal_df = np.vstack((normal_df, str))
+            
+            else: 
+                anomalmal_df = np.vstack((anomalmal_df, str))
+
+            count_time_cycles += 1
+            current_str_num += 1
+
+        # normal_df = normal_df[1:, :]
+        # anomalmal_df = anomalmal_df[1:, :]
+
+
+        np.savetxt(fileName_Normal_DF, normal_df, delimiter = ",")
+        np.savetxt(fileName_Anomal_DF, anomalmal_df, delimiter = ",")
+
         return True
 
 
@@ -262,7 +333,7 @@ class PrepData:
         for line in dataFrame:
             if(self.is_nan_dataFrame_Line(line) == False):
                 res_dataFrame = np.vstack((res_dataFrame, line))
-                print(f"res_dataFrame = {res_dataFrame}")
+                #print(f"res_dataFrame = {res_dataFrame}")
             else:
                 continue
 
@@ -281,10 +352,10 @@ class PrepData:
         for st in dataset:
             if(np.isnan(st)):
                 self.status = True
-                self.out_info(self.status, status_log[0] + f" result is {self.status}")
+                #self.out_info(self.status, status_log[0] + f" result is {self.status}")
                 return self.status
             
-        self.out_info(self.status, status_log[0] + f" result is {self.status}")
+        #self.out_info(self.status, status_log[0] + f" result is {self.status}")
         return self.status
 
 
