@@ -136,15 +136,15 @@ class PrepData:
 
             # Загружаем i-тый фаил
             dataFrame = genfromtxt(inp_dir + file, delimiter = ',')
+            self.to_standardization_df(dataFrame)
             
             # Проверяем датасет на пригодность (отсутствие пропусков)
             for line in dataFrame:
                 if (self.is_nan_dataFrame_Line(line) == False):
-                    continue
-                else:
                     print("Dataset is BAD Starting standartization dataframe...")
-                    self.to_standardization_df(dataFrame)
-                    break
+                    self.is_nan_dataFrame_Line(line)
+                else:
+                    continue
             
             print("Dataset is GOOD  Starting employ pipeline...")
             
