@@ -3,13 +3,13 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "preprocess_data"
-version = "0.0.5"
+name = "preprocess-data"
+version = "0.0.8"
 authors = [
   { name="DZ" },
 ]
 
-description = "package from delet null data"
+description = "package for preprocessing data"
 readme = "README.md"
 requires-python = ">=3.8"
 classifiers = [
@@ -19,7 +19,7 @@ classifiers = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/Dimitriy200/PyPackPrepData"
+Homepage = "https://github.com/Dimitriy200/prepData"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/PrepData"]
+packages = ["src/prepData"]

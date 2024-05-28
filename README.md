@@ -1,5 +1,7 @@
-<h2>Дом проекта</h2>
-<a href = "https://test.pypi.org/project/preprocess-data/0.0.4/">PyPi</a>
+Данный проект предназначен для предобработки данных. Пакет предоставляет следующие функции:
+ - Создание/ загрузка/ 
 
-<h2>Установка</h2>
-<code> pip install -i https://test.pypi.org/simple/ preprocess-data==0.0.4 </code>
+## Дом проекта
+<a href = "https://test.pypi.org/project/preprocess-data/0.0.7/">PyPi</a>
+
+## класс PrepData

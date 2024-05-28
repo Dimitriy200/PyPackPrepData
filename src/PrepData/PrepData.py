@@ -2,6 +2,9 @@ import pandas as pd
 import os
 import pickle
 import numpy as np
+import json
+import csv
+import sys
 
 from sklearn.impute import SimpleImputer, KNNImputer
 from sklearn.preprocessing import StandardScaler
@@ -105,10 +108,15 @@ class PrepData:
     def employ_Pipline(self,
                         inp_dir: str,       # B inpFilesList и outFilesList указывать полный путь
                         out_dir: str,
-                        pipline: Pipeline = defaultPipline) -> bool:
+                        name_csv: str,
+                        pipline: Pipeline = defaultPipline,) -> bool:
         
         status_log  =           ["Preprocess data finished successfull",        "Preprocess data finished error"]
         get_doc_log =           ["Getting a list of documents...",              "Documents have been received"]
+
+        concate_data(inp_dir,
+                     out_dir,
+                     name_csv)
 
         # На конце выходной строки дирректории должна стоять "/"
         if inp_dir[-1] != '/':
@@ -228,6 +236,61 @@ class PrepData:
         np.savetxt(fileName_Anomal_DF, anomalmal_df, delimiter = ",")
 
         return True
+
+
+    @classmethod
+    def load_json(inp_json_dir: str,
+                  out_csv_dir: str,
+                  name_out_csv: str):
+
+        res_arr = []
+
+        jsons = os.listdir(inp_json_dir)
+        print(jsons)
+
+        for file in jsons:
+            json_dict = {}
+            with open(inp_json_dir + file, "r") as json_file:
+                json_dict = json.load(json_file)
+                time_res = list(json_dict.values())
+                res_arr.append(time_res)
+        
+        with open(os.path.join(out_csv_dir, name_out_csv), "w") as new_csv:
+            write = csv.writer(new_csv, lineterminator='\n')
+            write.writerows(res_arr)
+
+
+    @classmethod
+    def concate_data(inp_csv_dir: str,
+                     out_csv_dir: str,
+                     name_out_csv: str,
+                     col_count: int = 0):
+
+        inpFilesList = os.listdir(inp_csv_dir)
+        
+        if inpFilesList == []:
+            try:
+                sys.exit(0)
+            except SystemExit:
+                os._exit(0)
+
+        df = genfromtxt(os.path.join(inp_csv_dir, inpFilesList[0]))
+        col, str = df.shape
+
+        if col_count == 0:
+            res = np.zeros(col)
+        else:
+            res = np.zeros(col_count)
+
+        for doc in inpFilesList:
+            file = genfromtxt(os.path.join(inp_csv_dir, doc), delimiter = ',')
+
+            res = np.vstack(res, file)
+
+        np.savetxt(os.path.join(out_csv_dir, name_out_csv),
+                   res,
+                   delimiter = ",")
+
 
 
 #           --- Service Functions --- 
