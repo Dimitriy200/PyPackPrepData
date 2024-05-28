@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "preprocess_data"
-version = "0.0.4"
+version = "0.0.5"
 authors = [
   { name="DZ" },
 ]
@@ -22,4 +22,4 @@ classifiers = [
 Homepage = "https://github.com/Dimitriy200/PyPackPrepData"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/pd"]
+packages = ["src/PrepData"]
