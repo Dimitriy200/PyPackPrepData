@@ -275,6 +275,8 @@ class PrepData:
         last_time_cycles = []
         count_units = []
 
+        data = genfromtxt()
+
         str_df, col_df  = genfromtxt(os.path.join(inp_path, list_units[0]), delimiter = ',').shape
 
         valid_np_train = np.zeros(col_df)
@@ -337,6 +339,8 @@ class PrepData:
 
         np.savetxt(os.path.join(out_path, file_Name_Train_DF), valid_np_train, delimiter = ",")
         np.savetxt(os.path.join(out_path, file_Name_Valid_DF), valid_np_valid, delimiter = ",")
+
+        return True
 
     @classmethod
     def jsons_to_csv(self, inp_json_dir: str):
