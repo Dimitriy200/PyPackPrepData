@@ -5,6 +5,7 @@ import numpy as np
 import json
 import csv
 import sys
+import logging
 
 from sklearn.impute import SimpleImputer, KNNImputer
 from sklearn.preprocessing import StandardScaler
@@ -106,80 +107,85 @@ class PrepData:
 
     @classmethod
     def employ_Pipline(self,
-                        inp_dir: str,       # B inpFilesList и outFilesList указывать полный путь
-                        out_dir: str,
-                        name_csv: str,
-                        pipline: Pipeline = defaultPipline,) -> bool:
+                        # inp_dir: str,       # B inpFilesList и outFilesList указывать полный путь
+                        array_np: np.array,
+                        #out_dir: str,
+                        #new_csv_file_name: str,
+                        pipline: Pipeline = defaultPipline,) -> np.array:
         
         status_log  =           ["Preprocess data finished successfull",        "Preprocess data finished error"]
         get_doc_log =           ["Getting a list of documents...",              "Documents have been received"]
 
-        concate_data(inp_dir,
-                     out_dir,
-                     name_csv)
-
         # На конце выходной строки дирректории должна стоять "/"
-        if inp_dir[-1] != '/':
-            inp_dir = f"{inp_dir}/"
-        if out_dir[-1] != '/':
-            out_dir = f"{out_dir}/"
+        # if inp_dir[-1] != '/':
+        #     inp_dir = f"{inp_dir}/"
+        # if out_dir[-1] != '/':
+        #     out_dir = f"{out_dir}/"
+
+        if ".csv" not in new_csv_file_name:
+            new_csv_file_name = f"{new_csv_file_name}.csv"
 
         # Получаем все документы в папке
-        print(get_doc_log[0])
-        inpFilesList = os.listdir(inp_dir)
-        outFilesList = inpFilesList
+        # print(get_doc_log[0])
+        # inpFilesList = os.listdir(inp_dir)
+        # outFilesList = inpFilesList
         
         # Вывод списка файлов в диррекории
-        for fl in inpFilesList:
-            print("   .../" + fl)
+        # for fl in inpFilesList:
+        #     print("   .../" + fl)
             
-        print(get_doc_log[1])
+        # print(get_doc_log[1])
 
         # Применение
-        for file in inpFilesList:
-            if file == ".gitkeep":
-                continue
+        # for file in inpFilesList:
+        #     if file == ".gitkeep":
+        #         continue
             
-            print("  Processed --> ", file)
+        #     print("  Processed --> ", file)
 
-            # Загружаем i-тый фаил
-            dataFrame = genfromtxt(inp_dir + file, delimiter = ',')
-            self.to_standardization_df(dataFrame)
+        #     # Загружаем i-тый фаил
+        #     dataFrame = genfromtxt(os.path.join(inp_dir, file), delimiter = ',')
+        #     self.to_standardization_df(dataFrame)
             
             # Проверяем датасет на пригодность (отсутствие пропусков)
-            for line in dataFrame:
-                if (self.is_nan_dataFrame_Line(line) == False):
-                    print("Dataset is BAD Starting standartization dataframe...")
-                    self.is_nan_dataFrame_Line(line)
-                else:
-                    continue
-            
-            print("Dataset is GOOD  Starting employ pipeline...")
-            
-            # newDataFrame = pd.DataFrame(dataFrame, columns = pipline['scaler'].get_feature_names_out(dataFrame.columns))
-            newDataFrame = pipline.fit_transform(dataFrame)
-
-            # Сохранение
-            fileName = out_dir + "New_" + file
-            np.savetxt(fileName, newDataFrame, delimiter = ",")
+        for line in array_np:
+            if (self.is_nan_dataFrame_Line(line) == False):
+                print("Dataset is BAD Starting standartization dataframe...")
+                self.is_nan_dataFrame_Line(line)
+            else:
+                continue
         
-        self.out_info(True, status_log[0])
-        return True
+        print("Dataset is GOOD  Starting employ pipeline...")
+        
+        # newDataFrame = pd.DataFrame(dataFrame, columns = pipline['scaler'].get_feature_names_out(dataFrame.columns))
+        newDataFrame = pipline.fit_transform(array_np)
+
+        # Сохранение
+        # new_csv_dir_path = os.path.join(out_dir, new_csv_file_name)
+        # np.savetxt(new_csv_dir_path, newDataFrame, delimiter = ",")
+
+        res_dataframe = np.array(newDataFrame)
+        
+        return res_dataframe
 
 
     @classmethod
-    def differentiation_on_anomaly(dataFrame: np.array,
-                               last_anomaly: int,
-                               out_dir: str,
-                               file_name: str) -> bool:
+    def different_anomaly(self,
+                                   dataFrame: np.array,
+                                   out_dir: str,
+                                   file_name: str,
+                                   last_procent: int = 10) -> bool:
     
         count_unit_number = dataFrame[1, 0]
         count_time_cycles = 1
+
+        unit_numbers = dataFrame[:, 1]
 
         current_str_num = 0
         count = 0
 
         last_time_cycles = []
+        count_units = []
 
         str_df, col_df  = dataFrame.shape
 
@@ -188,16 +194,29 @@ class PrepData:
 
         unit_number = 0
 
-        fileName_Normal_DF = out_dir + "New_NORMAL" + file_name + ".csv"
-        fileName_Anomal_DF = out_dir + "New_ANOMAL" + file_name + ".csv"
+        fileName_Normal_DF = f"New_NORMAL{file_name}.csv"
+        fileName_Anomal_DF = f"New_ANOMAL{file_name}.csv"
         
+        
+        #Расчет last_anomaly
+        last_anomaly = 0
+        for num in set(unit_numbers):
+            if last_anomaly == 0:
+                last_anomaly = unit_numbers.count(num)
+            elif unit_numbers.count(num) < last_anomaly:
+                last_anomaly = unit_numbers.count(num)
 
+        last_anomaly = last_anomaly / last_procent
+        last_anomaly = round(last_anomaly, 0)
+
+        current_str_num = 0
+
+        # Формирование массива крайних строк UnitNumber
         for str in dataFrame:
             unit_number = dataFrame[current_str_num, 0]
             #print(unit_number)
 
-            if(count_unit_number != unit_number or
-            current_str_num == str_df - 1):
+            if(count_unit_number != unit_number or current_str_num == str_df - 1):
                 last_time_cycles.append(count_time_cycles)
                 count_unit_number = unit_number
             
@@ -209,6 +228,7 @@ class PrepData:
         count_time_cycles = 1
         current_str_num = 0
 
+        #Разделение 
         for str in dataFrame:
 
             unit_number = dataFrame[current_str_num, 0]
@@ -232,32 +252,134 @@ class PrepData:
         # anomalmal_df = anomalmal_df[1:, :]
 
 
-        np.savetxt(fileName_Normal_DF, normal_df, delimiter = ",")
-        np.savetxt(fileName_Anomal_DF, anomalmal_df, delimiter = ",")
+        np.savetxt(os.path.join(out_dir, fileName_Normal_DF), normal_df, delimiter = ",")
+        np.savetxt(os.path.join(out_dir, fileName_Anomal_DF), anomalmal_df, delimiter = ",")
 
-        return True
+        return {"fileName_Normal_DF": fileName_Normal_DF,
+                "fileName_Anomal_DF": fileName_Anomal_DF}
 
 
     @classmethod
-    def load_json(inp_json_dir: str,
-                  out_csv_dir: str,
-                  name_out_csv: str):
+    def different_train_and_valid(self,
+                                  inp_path: str,
+                                  out_path: str,
+                                  procent_train: str = 30):
 
         res_arr = []
 
-        jsons = os.listdir(inp_json_dir)
-        print(jsons)
+        file_Name_Train_DF = "Train.csv"
+        file_Name_Valid_DF = "Valid.csv"
 
-        for file in jsons:
-            json_dict = {}
-            with open(inp_json_dir + file, "r") as json_file:
-                json_dict = json.load(json_file)
-                time_res = list(json_dict.values())
-                res_arr.append(time_res)
+        list_units = os.listdir(inp_path)
+
+        last_time_cycles = []
+        count_units = []
+
+        str_df, col_df  = genfromtxt(os.path.join(inp_path, list_units[0]), delimiter = ',').shape
+
+        valid_np_train = np.zeros(col_df)
+        valid_np_valid = np.zeros(col_df)
+
+        for unit in list_units:
+            
+            unit_np_DF = genfromtxt(os.path.join(inp_path, unit), delimiter = ',')
+            
+            unit_numbers = unit_np_DF[:, 1]
+            str_df, col_df  = unit_np_DF.shape
+            last_valid = 0
+            count = 0
+
+            for num in set(unit_numbers):
+                if last_valid == 0:
+                    last_valid = unit_numbers.count(num)
+                elif unit_numbers.count(num) < last_valid:
+                    last_valid = unit_numbers.count(num)
+
+            last_anomaly = last_anomaly / procent_train
+            last_anomaly = round(last_anomaly, 0)
+
+            # Формирование массива крайних строк UnitNumber
+            for str in unit_np_DF:
+                unit_number = unit_np_DF[current_str_num, 0]
+                #print(unit_number)
+
+                if(count_unit_number != unit_number or current_str_num == str_df - 1):
+                    last_time_cycles.append(count_time_cycles)
+                    count_unit_number = unit_number
+                
+                count_time_cycles += 1
+                current_str_num += 1
+
+
+            count_unit_number = unit_np_DF[1, 0]
+            count_time_cycles = 1
+            current_str_num = 0
+
+            #Разделение 
+            for str in unit_np_DF:
+
+                unit_number = unit_np_DF[current_str_num, 0]
+
+                if(count_unit_number != unit_number):
+                    count += 1
+                    count_unit_number = unit_number
+
+                barrer = last_time_cycles[count] - last_anomaly
+
+                if(count_time_cycles < barrer):
+                    valid_np_train = np.concatenate((valid_np_train, str))
+                
+                else: 
+                    valid_np_valid = np.concatenate((valid_np_valid, str))
+
+                count_time_cycles += 1
+                current_str_num += 1
+
+        np.savetxt(os.path.join(out_path, file_Name_Train_DF), valid_np_train, delimiter = ",")
+        np.savetxt(os.path.join(out_path, file_Name_Valid_DF), valid_np_valid, delimiter = ",")
+
+    @classmethod
+    def jsons_to_csv(self, inp_json_dir: str):
+
+        res_arr = []
+
+        # Получить список подпапок с json-ами
+        list_units = os.listdir(inp_json_dir)
+        list_units.sort()
+
+        logging.info(f"List of units: {list_units}")
+        # print(list_units)
+
+        # Пробежаться по json-ам и склеить их
+        # print(jsons)
         
-        with open(os.path.join(out_csv_dir, name_out_csv), "w") as new_csv:
-            write = csv.writer(new_csv, lineterminator='\n')
-            write.writerows(res_arr)
+        for unit in list_units:
+            unit_dir = os.path.join(inp_json_dir, unit)
+            logging.info(f"Unit dir: {unit_dir}")
+            # print(unit_dir)
+            
+            jsons_files = os.listdir(unit_dir)
+            jsons_files.sort()
+
+            logging.info(f"Json files in unit: {unit_dir}")
+            # print(jsons_files)
+
+            for file in jsons_files:
+                json_dict = {}
+                jsons_dir = os.path.join(unit_dir, file)
+                
+                with open(jsons_dir, "r") as json_file:
+                    json_dict = json.load(json_file)
+                    value_buffer = list(json_dict.values())
+                    res_arr.append(value_buffer)
+        
+        # Сохранить в указанную папку
+        # csv_dir_path = os.path.join(out_csv_dir, name_out_csv)
+        # with open(csv_dir_path, "w") as new_csv:
+        #     write = csv.writer(new_csv, lineterminator='\n')
+        #     write.writerows(res_arr)
+        
+        return res_arr
 
 
     @classmethod
@@ -292,6 +414,23 @@ class PrepData:
                    delimiter = ",")
 
 
+    @classmethod
+    def start_prepData(self,
+                       path_raw: str,
+                       path_processed: str,
+                       path_final: str):
+        
+        dataset_csv = self.jsons_to_csv(path_raw)
+        dataset_np = np.array(dataset_csv)
+
+        prep_dataset = self.employ_Pipline(dataset_np)
+
+        self.different_anomaly(prep_dataset, path_processed)
+        
+        self.different_train_and_valid(path_processed, path_final)
+
+
+        
 
 #           --- Service Functions --- 
 
@@ -443,11 +582,6 @@ class PrepData:
     def out_info(self, status: bool, text: str):
         print(text)
         self.status = status
-
-
-
-
-
 
 
 
