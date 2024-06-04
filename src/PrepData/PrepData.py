@@ -52,7 +52,8 @@ class PrepData:
     
 
     @classmethod
-    def save_Pipeline(self, saved_pipeline: Pipeline, save_path: str) -> bool:
+    def save_Pipeline(self, saved_pipeline: Pipeline,
+                      save_path: str) -> bool:
         status_log = ["Save pipline successfull", "Save pipline error"]
 
         try:
@@ -173,7 +174,7 @@ class PrepData:
     def different_anomaly(self,
                           dataFrame: np.array,
                           out_path: str,
-                          last_procent: int = 0.1) -> bool:
+                          last_procent: int = 0.1) -> dict:
     
         Name_Normal_DF = "Normal.csv"
         Name_Anomal_DF = "Anomal.csv"
@@ -214,7 +215,7 @@ class PrepData:
     def different_train_and_valid(self,
                                   inp_path: str,
                                   out_path: str,
-                                  procent_train: str = 30):
+                                  procent_train: str = 30) -> str:
 
         file_Name_Train_DF = "Train.csv"
         file_Name_Valid_DF = "Valid.csv"
@@ -339,6 +340,7 @@ class PrepData:
         self.different_anomaly(prep_dataset, path_processed)
         
         self.different_train_and_valid(path_processed, path_final)
+
 
 
         
