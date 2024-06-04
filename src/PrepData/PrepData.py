@@ -111,7 +111,7 @@ class PrepData:
                         # inp_dir: str,       # B inpFilesList и outFilesList указывать полный путь
                         array_np: np.array,
                         #out_dir: str,
-                        #new_csv_file_name: str,
+                        new_csv_file_name: str,
                         pipline: Pipeline = defaultPipline,) -> np.array:
         
         status_log  =           ["Preprocess data finished successfull",        "Preprocess data finished error"]
@@ -146,20 +146,27 @@ class PrepData:
 
         #     # Загружаем i-тый фаил
         #     dataFrame = genfromtxt(os.path.join(inp_dir, file), delimiter = ',')
-        #     self.to_standardization_df(dataFrame)
+        
+        
+        array_np = self.to_standardization_df(array_np)
             
-            # Проверяем датасет на пригодность (отсутствие пропусков)
-        for line in array_np:
-            if (self.is_nan_dataFrame_Line(line) == False):
-                print("Dataset is BAD Starting standartization dataframe...")
-                self.is_nan_dataFrame_Line(line)
-            else:
-                continue
+        # Проверяем датасет на пригодность (отсутствие пропусков)
+        # for line in array_np:
+        #     if (self.is_nan_dataFrame_Line(line) == False):
+        #         print("Dataset is BAD Starting standartization dataframe...")
+        #         self.to_standardization_df(array_np)
+        #     else:
+        #         continue
         
         print("Dataset is GOOD  Starting employ pipeline...")
         
         # newDataFrame = pd.DataFrame(dataFrame, columns = pipline['scaler'].get_feature_names_out(dataFrame.columns))
-        newDataFrame = pipline.fit_transform(array_np)
+        # print(array_np)
+        # array_nd = np.array(array_np)
+        
+        new_pipeline = self.createDefault_Pipline()
+        newDataFrame = new_pipeline.fit_transform(array_np)
+        # newDataFrame = pipline.fit_predict(array_np)
 
         # Сохранение
         # new_csv_dir_path = os.path.join(out_dir, new_csv_file_name)
@@ -204,8 +211,8 @@ class PrepData:
                                                last_valid,
                                                last_time_cycles)
         
-        np.savetxt(os.path.join(out_path, Name_Normal_DF), dict_val_train['valid_np_train'], delimiter=",")
-        np.savetxt(os.path.join(out_path, Name_Anomal_DF), dict_val_train['valid_np_valid'], delimiter=",")
+        np.savetxt(os.path.join(out_path, Name_Normal_DF), dict_val_train['Mean'], delimiter=",")
+        np.savetxt(os.path.join(out_path, Name_Anomal_DF), dict_val_train['Small'], delimiter=",")
 
         return {"fileName_Normal_DF": Name_Normal_DF,
                 "fileName_Anomal_DF": Name_Anomal_DF}
@@ -220,38 +227,50 @@ class PrepData:
         file_Name_Train_DF = "Train.csv"
         file_Name_Valid_DF = "Valid.csv"
 
-        list_units = os.listdir(inp_path)
+        # list_units = os.listdir(inp_path)
 
-        str_df, col_df  = genfromtxt(os.path.join(inp_path, list_units[0]), delimiter = ',').shape
+        data_np = genfromtxt(inp_path, delimiter = ',')
+
+        # set_data_np = set(data_np)
+        
+        # if len(set_data_np) == 1 and list(set_data_np)[0] == 0:
+        #     print("Массив пустой")
+        #     return "False"
+
+        if not np.any(data_np):
+            print("Массив пустой")
+            return "False"
+    
+        str_df, col_df  = data_np.shape
 
         np_train = np.zeros(col_df)
         np_valid = np.zeros(col_df)
         
 
-        for unit in list_units:
+        # for unit in list_units
             
-            unit_np_DF = genfromtxt(os.path.join(inp_path, unit), delimiter = ',')
+            # unit_np_DF = genfromtxt(os.path.join(inp_path, unit), delimiter = ',')
             # unit_numbers = unit_np_DF[:, 1]
-            unit_numbers = unit_np_DF[:, 0].tolist()
-            
-            last_valid = self.check_min_repeate_units(unit_numbers)
-            
-            last_time_cycles = self.array_of_outer_row_formation(unit_np_DF)
-            
-            dict_val_train = self.different_arrays(unit_np_DF,
+        unit_numbers = data_np[:, 0].tolist()
+        
+        last_valid = self.check_min_repeate_units(unit_numbers)
+        
+        last_time_cycles = self.array_of_outer_row_formation(data_np)
+        
+        dict_val_train = self.different_arrays(data_np,
                                               np_train,
                                               np_valid,
                                               last_valid,
                                               last_time_cycles)
             
         
-        np.savetxt(os.path.join(out_path, file_Name_Train_DF), dict_val_train['valid_np_train'], delimiter=",")
-        np.savetxt(os.path.join(out_path, file_Name_Valid_DF), dict_val_train['valid_np_valid'], delimiter=",")
+        np.savetxt(os.path.join(out_path, file_Name_Train_DF), dict_val_train['Mean'], delimiter=",")
+        np.savetxt(os.path.join(out_path, file_Name_Valid_DF), dict_val_train['Small'], delimiter=",")
 
         return os.path.join(out_path, file_Name_Train_DF)
 
     @classmethod
-    def jsons_to_csv(self, inp_json_dir: str):
+    def jsons_to_csv(self, inp_json_dir: str) -> list:
 
         res_arr = []
 
@@ -283,6 +302,10 @@ class PrepData:
                 with open(jsons_dir, "r") as json_file:
                     json_dict = json.load(json_file)
                     value_buffer = list(json_dict.values())
+
+                    value_buffer = value_buffer[:-3]
+
+                    value_buffer = list(map(float, value_buffer))
                     res_arr.append(value_buffer)
         
         # Сохранить в указанную папку
@@ -290,6 +313,8 @@ class PrepData:
         # with open(csv_dir_path, "w") as new_csv:
         #     write = csv.writer(new_csv, lineterminator='\n')
         #     write.writerows(res_arr)
+
+        
         
         return res_arr
 
@@ -333,13 +358,27 @@ class PrepData:
                        path_final: str):
         
         dataset_csv = self.jsons_to_csv(path_raw)
+
+        # print(f"dataset_csv - {dataset_csv}")
+        
+        col = len(dataset_csv[0])
+
+        # dataset_np = np.zeros(col)
+        # dataset_np = np.vstack(dataset_csv)
         dataset_np = np.array(dataset_csv)
 
-        prep_dataset = self.employ_Pipline(dataset_np)
+        # print(f"dataset_np - {dataset_np}")
 
-        self.different_anomaly(prep_dataset, path_processed)
+        prep_dataset = self.employ_Pipline(dataset_np,
+                                           new_csv_file_name = "NewData.csv")
+
+        self.different_anomaly(prep_dataset,
+                               path_processed)
         
-        self.different_train_and_valid(path_processed, path_final)
+        list_units = os.listdir(path_processed)
+        for file in list_units:
+            self.different_train_and_valid(os.path.join(path_processed, file),
+                                        path_final)
 
 
 
@@ -371,17 +410,12 @@ class PrepData:
     
         status_log = ["Standartization dataframe successfull", "Standartization dataframe error"]
 
-        try:
-            dataFrame = self.add_col_indexes(dataFrame)
-            dataFrame = self.delete_names(dataFrame)
-            dataFrame = self.delete_nan_str(dataFrame)
+        # dataFrame = self.add_col_indexes(dataFrame)
+        dataFrame = self.delete_names(dataFrame)
+        dataFrame = self.delete_nan_str(dataFrame)
 
-            self.out_info(True, status_log[0])
-            return dataFrame
-        
-        except:
-            self.out_info(False, status_log[1])
-            return self.status
+        self.out_info(True, status_log[0])
+        return dataFrame
 
 
     # 1 - Добавление столбца с индексами
@@ -469,8 +503,8 @@ class PrepData:
                 self.status = True
                 #self.out_info(self.status, status_log[0] + f" result is {self.status}")
                 return self.status
-            
-        #self.out_info(self.status, status_log[0] + f" result is {self.status}")
+                
+            #self.out_info(self.status, status_log[0] + f" result is {self.status}")
         return self.status
 
 
@@ -518,24 +552,55 @@ class PrepData:
 
         count_time_cycles = 1
         last_time_cycles = []
-        count_unit_number = unit_np_DF[1, 0]
+        # count_unit_number = unit_np_DF[1, 0]
+        count_unit_number = 0
         current_str_num = 0
         str_df, col_df  = unit_np_DF.shape
 
-        for str in unit_np_DF:
-            unit_number = unit_np_DF[current_str_num, 0]
+        for index, str in enumerate(unit_np_DF):
+            unit_number = unit_np_DF[index, 0]
             #print(unit_number)
+            if index == len(unit_np_DF) - 1:
+                last_time_cycles.append(index)
+                continue
 
-            if(count_unit_number != unit_number or current_str_num == str_df - 1):
-                last_time_cycles.append(count_time_cycles)
+            if count_unit_number == 0:
+                count_unit_number = unit_number
+                continue
+
+            # if(count_unit_number != unit_number or current_str_num == str_df - 1):
+            if(count_unit_number != unit_number):
+                last_time_cycles.append(index - 1)
                 count_unit_number = unit_number
             
-            count_time_cycles += 1
-            current_str_num += 1
+            # count_time_cycles += 1
+            # current_str_num += 1
         
-        last_time_cycles[-1] += 1
+        # last_time_cycles[-1] += 1
 
         return last_time_cycles
+
+
+#1 - 0    [[1, 1, 1]
+#2 - 1     [1, 1, 1]
+#3 - 2     [2, 2, 2]
+#4 - 3     [2, 2, 2]
+#5 - 4     [2, 2, 2]
+#6 - 5     [2, 2, 2]
+#7 - 6     [3, 3, 3]     
+#8 - 7     [3, 3, 3]     unit_number
+#9 - 8     [3, 3, 3]
+#10 - 9    [3, 3, 3]     barrer
+#11 - 10   [4, 4, 4]     count_unit_number
+#12 - 11   [4, 4, 4]
+#13 - 12   [4, 4, 4]
+#14 - 13   [4, 4, 4]
+#15 - 14   [5, 5, 5]
+#16 - 15   [5, 5, 5]]
+
+# last_time_cycles = [3, 7, 11, 17]
+
+
 
 
     @classmethod
@@ -547,32 +612,44 @@ class PrepData:
                          last_valid: int,
                          last_time_cycles: list):
 
-        count_unit_number = unit_np_DF[1, 0]
+        # count_unit_number = unit_np_DF[1, 0]
+        count_unit_number = 0
         count_time_cycles = 1
         current_str_num = 0
         count = 0
 
-        for str in unit_np_DF:
+        for index, str in enumerate(unit_np_DF):
 
-            unit_number = unit_np_DF[current_str_num, 0]
+            unit_number = unit_np_DF[index, 0]
 
-            if(count_unit_number != unit_number):
+            # if index == len(unit_np_DF) - 1:
+                
+            #     continue
+            
+            if count_unit_number == 0:
+                count_unit_number = unit_number
+                continue
+
+            if count_unit_number != unit_number:
+                if index == len(unit_np_DF) - 1:
+                    np_train = np.vstack((np_train, str))
+                    continue
                 count += 1
                 count_unit_number = unit_number
 
             barrer = last_time_cycles[count] - last_valid
 
-            if(count_time_cycles < barrer):
+            if index <= barrer:
                 np_train = np.vstack((np_train, str))
             
             else:
                 np_valid = np.vstack((np_valid, str))
 
-            count_time_cycles += 1
-            current_str_num += 1
+            # count_time_cycles += 1
+            # current_str_num += 1
 
-        return {'valid_np_train': np_train,
-                'valid_np_valid': np_valid}
+        return {'Mean': np_train,
+                'Small': np_valid}
 
 
     @classmethod

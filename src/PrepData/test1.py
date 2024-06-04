@@ -1,5 +1,5 @@
-# import sys
-# sys.path.append('C:/Users/Dmitriy/Desktop/Univer/Diplom/PyPackPrepData/src/')
+import sys
+sys.path.append('C:/Users/Dmitriy/Desktop/Univer/Diplom/PyPackPrepData/src/')
 
 import pandas as pd
 import pytest
@@ -7,30 +7,72 @@ import sys
 import os
 import numpy as np
 
-from numpy import genfromtxt
 from prepData import PrepData
 
 base_dir = os.path.abspath("diplom_autoencoder")
 
-# # Small_BAD_test_FD001 = pd.read_csv("C:/Users/Dmitriy/Desktop/Univer/Diplom/diplom_autoencoder/data/raw/Small_BAD_test_FD001.csv")
-# # inp_test_raw_json = os.path.join(base_dir, "data", "raw","2024-06-02_2024-06-03_2024-06-04") 
-# # out_test_processed_json = os.path.join(base_dir, "data", "processed")
-
-inp_data = os.path.join(base_dir, "data", "processed")
-out_data = os.path.join(base_dir, "data", "final")
+dir_final = os.path.join(base_dir, "data", "final")
+dir_processed = os.path.join(base_dir, "data", "processed")
+dir_raw = os.path.join(base_dir, "data", "raw", "2024-06-02_2024-06-03_2024-06-04")
 
 
-data = genfromtxt(os.path.join(inp_data, "ANOMALY_train_FD001.csv"), delimiter=',')
+print(f"\n base_dir - {base_dir}")
+print(dir_final)
+print(dir_processed)
+print(dir_raw)
 
 
 pr = PrepData()
-pr.different_anomaly(data, out_data)
+pr.start_prepData(dir_raw, dir_processed, dir_final)
+
+
+
+# def dif_data(data: np.array):
 
 
 
 
 
+# data = ['1', '2', '3', '4', '5', '6', '7']
 
+# # n = np.array(l, dtype=list)
+
+# col = len(data)
+# dataset_np = np.zeros(col)
+# print(dataset_np)
+
+# dataset_np = np.vstack(data)
+
+# dataset_np.
+
+# dataset = [array([1]), array([2]), array([3])]
+#           0 : array([1])
+
+# datast_np = 0: array(['10', '1', '-0.0014', '0.0004'
+
+
+
+
+
+# def is_nan_dataFrame_Line(dataset: np.array) -> bool:
+
+#     status_log = ["Check NULL values in dataframe successfull", "Check NULL values in dataframe error"]
+#     status = False
+
+#     # dataset = [array([1]), array([2]), array([3])]
+#     #           0 : array([1])
+#     for st in dataset:
+#         if(np.isnan(st)):
+#             status = True
+#             #self.out_info(self.status, status_log[0] + f" result is {self.status}")
+#             return status
+            
+#         #self.out_info(self.status, status_log[0] + f" result is {self.status}")
+#     return status
+
+
+
+# print(is_nan_dataFrame_Line(dataset_np))
 
 
 
