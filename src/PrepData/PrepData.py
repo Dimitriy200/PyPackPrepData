@@ -171,92 +171,43 @@ class PrepData:
 
     @classmethod
     def different_anomaly(self,
-                                   dataFrame: np.array,
-                                   out_dir: str,
-                                   file_name: str,
-                                   last_procent: int = 10) -> bool:
+                          dataFrame: np.array,
+                          out_path: str,
+                          last_procent: int = 0.1) -> bool:
     
-        count_unit_number = dataFrame[1, 0]
-        count_time_cycles = 1
+        Name_Normal_DF = "Normal.csv"
+        Name_Anomal_DF = "Anomal.csv"
 
-        unit_numbers = dataFrame[:, 1]
+        # list_units = os.listdir(inp_path)
 
-        current_str_num = 0
-        count = 0
 
-        last_time_cycles = []
-        count_units = []
+        str_df, col_df = dataFrame.shape
 
-        str_df, col_df  = dataFrame.shape
-
-        normal_df = np.zeros(col_df)
-        anomalmal_df = np.zeros(col_df)
-
-        unit_number = 0
-
-        fileName_Normal_DF = f"New_NORMAL{file_name}.csv"
-        fileName_Anomal_DF = f"New_ANOMAL{file_name}.csv"
+        np_train = np.zeros(col_df)
+        np_valid = np.zeros(col_df)
         
+
+        # for unit in list_units:
+
+            # unit_numbers = unit_np_DF[:, 1]
+        unit_numbers = dataFrame[:, 0].tolist()
         
-        #Расчет last_anomaly
-        last_anomaly = 0
-        for num in set(unit_numbers):
-            if last_anomaly == 0:
-                last_anomaly = unit_numbers.count(num)
-            elif unit_numbers.count(num) < last_anomaly:
-                last_anomaly = unit_numbers.count(num)
+        last_valid = self.check_min_repeate_units(unit_numbers,
+                                                    procent_train = last_procent)
+        
+        last_time_cycles = self.array_of_outer_row_formation(dataFrame)
+        
+        dict_val_train = self.different_arrays(dataFrame,
+                                               np_train,
+                                               np_valid,
+                                               last_valid,
+                                               last_time_cycles)
+        
+        np.savetxt(os.path.join(out_path, Name_Normal_DF), dict_val_train['valid_np_train'], delimiter=",")
+        np.savetxt(os.path.join(out_path, Name_Anomal_DF), dict_val_train['valid_np_valid'], delimiter=",")
 
-        last_anomaly = last_anomaly / last_procent
-        last_anomaly = round(last_anomaly, 0)
-
-        current_str_num = 0
-
-        # Формирование массива крайних строк UnitNumber
-        for str in dataFrame:
-            unit_number = dataFrame[current_str_num, 0]
-            #print(unit_number)
-
-            if(count_unit_number != unit_number or current_str_num == str_df - 1):
-                last_time_cycles.append(count_time_cycles)
-                count_unit_number = unit_number
-            
-            count_time_cycles += 1
-            current_str_num += 1
-
-
-        count_unit_number = dataFrame[1, 0]
-        count_time_cycles = 1
-        current_str_num = 0
-
-        #Разделение 
-        for str in dataFrame:
-
-            unit_number = dataFrame[current_str_num, 0]
-
-            if(count_unit_number != unit_number):
-                count += 1
-                count_unit_number = unit_number
-
-            barrer = last_time_cycles[count] - last_anomaly
-
-            if(count_time_cycles < barrer):
-                normal_df = np.vstack((normal_df, str))
-            
-            else: 
-                anomalmal_df = np.vstack((anomalmal_df, str))
-
-            count_time_cycles += 1
-            current_str_num += 1
-
-        # normal_df = normal_df[1:, :]
-        # anomalmal_df = anomalmal_df[1:, :]
-
-
-        np.savetxt(os.path.join(out_dir, fileName_Normal_DF), normal_df, delimiter = ",")
-        np.savetxt(os.path.join(out_dir, fileName_Anomal_DF), anomalmal_df, delimiter = ",")
-
-        return {"fileName_Normal_DF": fileName_Normal_DF,
-                "fileName_Anomal_DF": fileName_Anomal_DF}
+        return {"fileName_Normal_DF": Name_Normal_DF,
+                "fileName_Anomal_DF": Name_Anomal_DF}
 
 
     @classmethod
@@ -265,82 +216,38 @@ class PrepData:
                                   out_path: str,
                                   procent_train: str = 30):
 
-        res_arr = []
-
         file_Name_Train_DF = "Train.csv"
         file_Name_Valid_DF = "Valid.csv"
 
         list_units = os.listdir(inp_path)
 
-        last_time_cycles = []
-        count_units = []
-
-        data = genfromtxt()
-
         str_df, col_df  = genfromtxt(os.path.join(inp_path, list_units[0]), delimiter = ',').shape
 
-        valid_np_train = np.zeros(col_df)
-        valid_np_valid = np.zeros(col_df)
+        np_train = np.zeros(col_df)
+        np_valid = np.zeros(col_df)
+        
 
         for unit in list_units:
             
             unit_np_DF = genfromtxt(os.path.join(inp_path, unit), delimiter = ',')
+            # unit_numbers = unit_np_DF[:, 1]
+            unit_numbers = unit_np_DF[:, 0].tolist()
             
-            unit_numbers = unit_np_DF[:, 1]
-            str_df, col_df  = unit_np_DF.shape
-            last_valid = 0
-            count = 0
+            last_valid = self.check_min_repeate_units(unit_numbers)
+            
+            last_time_cycles = self.array_of_outer_row_formation(unit_np_DF)
+            
+            dict_val_train = self.different_arrays(unit_np_DF,
+                                              np_train,
+                                              np_valid,
+                                              last_valid,
+                                              last_time_cycles)
+            
+        
+        np.savetxt(os.path.join(out_path, file_Name_Train_DF), dict_val_train['valid_np_train'], delimiter=",")
+        np.savetxt(os.path.join(out_path, file_Name_Valid_DF), dict_val_train['valid_np_valid'], delimiter=",")
 
-            for num in set(unit_numbers):
-                if last_valid == 0:
-                    last_valid = unit_numbers.count(num)
-                elif unit_numbers.count(num) < last_valid:
-                    last_valid = unit_numbers.count(num)
-
-            last_anomaly = last_anomaly / procent_train
-            last_anomaly = round(last_anomaly, 0)
-
-            # Формирование массива крайних строк UnitNumber
-            for str in unit_np_DF:
-                unit_number = unit_np_DF[current_str_num, 0]
-                #print(unit_number)
-
-                if(count_unit_number != unit_number or current_str_num == str_df - 1):
-                    last_time_cycles.append(count_time_cycles)
-                    count_unit_number = unit_number
-                
-                count_time_cycles += 1
-                current_str_num += 1
-
-
-            count_unit_number = unit_np_DF[1, 0]
-            count_time_cycles = 1
-            current_str_num = 0
-
-            #Разделение 
-            for str in unit_np_DF:
-
-                unit_number = unit_np_DF[current_str_num, 0]
-
-                if(count_unit_number != unit_number):
-                    count += 1
-                    count_unit_number = unit_number
-
-                barrer = last_time_cycles[count] - last_anomaly
-
-                if(count_time_cycles < barrer):
-                    valid_np_train = np.concatenate((valid_np_train, str))
-                
-                else: 
-                    valid_np_valid = np.concatenate((valid_np_valid, str))
-
-                count_time_cycles += 1
-                current_str_num += 1
-
-        np.savetxt(os.path.join(out_path, file_Name_Train_DF), valid_np_train, delimiter = ",")
-        np.savetxt(os.path.join(out_path, file_Name_Valid_DF), valid_np_valid, delimiter = ",")
-
-        return True
+        return os.path.join(out_path, file_Name_Train_DF)
 
     @classmethod
     def jsons_to_csv(self, inp_json_dir: str):
@@ -580,6 +487,90 @@ class PrepData:
                 return self.status
         
         return self.status
+
+
+    @classmethod
+    #Поиск минимального количества повторений в UnitNumber
+    def check_min_repeate_units(self,
+                                unit_numbers: list,
+                                procent_train: float = 0.3):
+
+        last_valid = 0
+        for num in set(unit_numbers):
+            if last_valid == 0:
+                last_valid = unit_numbers.count(num)
+            elif unit_numbers.count(num) < last_valid:
+                last_valid = unit_numbers.count(num)
+
+        print(last_valid)
+        last_valid = last_valid * procent_train
+        last_valid = round(last_valid, 0)
+        
+        return last_valid
+
+
+    @classmethod
+    # Формирование массива крайних строк UnitNumber
+    def array_of_outer_row_formation(self,
+                                     unit_np_DF: np.array):
+
+        count_time_cycles = 1
+        last_time_cycles = []
+        count_unit_number = unit_np_DF[1, 0]
+        current_str_num = 0
+        str_df, col_df  = unit_np_DF.shape
+
+        for str in unit_np_DF:
+            unit_number = unit_np_DF[current_str_num, 0]
+            #print(unit_number)
+
+            if(count_unit_number != unit_number or current_str_num == str_df - 1):
+                last_time_cycles.append(count_time_cycles)
+                count_unit_number = unit_number
+            
+            count_time_cycles += 1
+            current_str_num += 1
+        
+        last_time_cycles[-1] += 1
+
+        return last_time_cycles
+
+
+    @classmethod
+    #Разделение на два массива
+    def different_arrays(self,
+                         unit_np_DF: np.array,
+                         np_train: np.array, 
+                         np_valid: np.array,
+                         last_valid: int,
+                         last_time_cycles: list):
+
+        count_unit_number = unit_np_DF[1, 0]
+        count_time_cycles = 1
+        current_str_num = 0
+        count = 0
+
+        for str in unit_np_DF:
+
+            unit_number = unit_np_DF[current_str_num, 0]
+
+            if(count_unit_number != unit_number):
+                count += 1
+                count_unit_number = unit_number
+
+            barrer = last_time_cycles[count] - last_valid
+
+            if(count_time_cycles < barrer):
+                np_train = np.vstack((np_train, str))
+            
+            else:
+                np_valid = np.vstack((np_valid, str))
+
+            count_time_cycles += 1
+            current_str_num += 1
+
+        return {'valid_np_train': np_train,
+                'valid_np_valid': np_valid}
 
 
     @classmethod
