@@ -1,0 +1,15 @@
+LICENSE
+README.md
+pyproject.toml
+src/prepData/__init__.py
+src/prepData/prepData.py
+src/prepData/test1.py
+src/prepData/__pycache__/prepData.cpython-311.pyc
+src/preprocess_data.egg-info/PKG-INFO
+src/preprocess_data.egg-info/SOURCES.txt
+src/preprocess_data.egg-info/dependency_links.txt
+src/preprocess_data.egg-info/requires.txt
+src/preprocess_data.egg-info/top_level.txt
+tests/MyBadCodeTests.ipynb
+tests/Tests.ipynb
+tests/__pycache__/test1.cpython-311-pytest-8.1.1.pyc

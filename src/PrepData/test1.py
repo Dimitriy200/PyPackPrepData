@@ -1,8 +1,6 @@
 import sys
 sys.path.append('C:/Users/Dmitriy/Desktop/Univer/Diplom/PyPackPrepData/src/')
 
-import pandas as pd
-import pytest
 import sys
 import os
 import numpy as np
