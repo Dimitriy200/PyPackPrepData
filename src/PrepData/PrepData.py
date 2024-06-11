@@ -1,4 +1,3 @@
-import pandas as pd
 import os
 import pickle
 import numpy as np
@@ -11,6 +10,8 @@ from sklearn.impute import SimpleImputer, KNNImputer
 from sklearn.preprocessing import StandardScaler
 from sklearn.pipeline import Pipeline
 from numpy import genfromtxt
+
+from typing import Dict, List, Any
 
 
 
@@ -199,11 +200,12 @@ class PrepData:
 
             # unit_numbers = unit_np_DF[:, 1]
         unit_numbers = dataFrame[:, 0].tolist()
-        
-        last_valid = self.check_min_repeate_units(unit_numbers,
-                                                    procent_train = last_procent)
-        
+
         last_time_cycles = self.array_of_outer_row_formation(dataFrame)
+
+        last_valid = self.check_min_repeate_units(last_time_cycles,
+                                                    procent_quitting = last_procent)
+        
         
         dict_val_train = self.different_arrays(dataFrame,
                                                np_train,
@@ -269,8 +271,10 @@ class PrepData:
 
         return os.path.join(out_path, file_Name_Train_DF)
 
+
+
     @classmethod
-    def jsons_to_csv(self, inp_json_dir: str) -> list:
+    def jsons_to_list(self, inp_json_dir: str) -> list:
 
         res_arr = []
 
@@ -357,7 +361,7 @@ class PrepData:
                        path_processed: str,
                        path_final: str):
         
-        dataset_csv = self.jsons_to_csv(path_raw)
+        dataset_csv = self.jsons_to_list(path_raw)
 
         # print(f"dataset_csv - {dataset_csv}")
         
@@ -380,6 +384,20 @@ class PrepData:
             self.different_train_and_valid(os.path.join(path_processed, file),
                                         path_final)
 
+
+    @classmethod
+    def json_to_numpy(self, json_dict_list: List[Dict[str, Any]]):
+
+        res_arr = []
+
+        for one_dict in json_dict_list:
+            res_arr = list(one_dict.values())
+            res_arr = res_arr[:-3]
+            res_arr.append(list(map(float, res_arr)))
+
+        res = np.array(res_arr)
+
+        return res
 
 
         
@@ -528,20 +546,44 @@ class PrepData:
     @classmethod
     #Поиск минимального количества повторений в UnitNumber
     def check_min_repeate_units(self,
-                                unit_numbers: list,
-                                procent_train: float = 0.3):
+                                last_time_cycles: list,
+                                procent_quitting: float):
 
-        last_valid = 0
-        for num in set(unit_numbers):
-            if last_valid == 0:
-                last_valid = unit_numbers.count(num)
-            elif unit_numbers.count(num) < last_valid:
-                last_valid = unit_numbers.count(num)
+        # last_valid = 0
+        # for num in set(unit_numbers):
+        #     if last_valid == 0:
+        #         last_valid = unit_numbers.count(num)
+        #     elif unit_numbers.count(num) < last_valid:
+        #         last_valid = unit_numbers.count(num)
 
-        print(last_valid)
-        last_valid = last_valid * procent_train
-        last_valid = round(last_valid, 0)
+        # print(last_valid)
+        # last_valid = last_valid * procent_train
+        # last_valid = round(last_valid, 0)
+
+        # res = []
+        # index = 0
+        # for n in unit_numbers:
+            
+        #     if index == 0:
+        #         index += 1
+        #         continue
+            
+        #     if index == len(unit_numbers) - 1:
+        #         break
+            
+        #     res.append(n - unit_numbers[index - 1])
+        #     index += 1
         
+        # [1, ..., ...]
+        last_time_cycles = last_time_cycles[1:]
+
+        last_valid = min(last_time_cycles)
+
+        last_valid = last_valid * procent_quitting
+        last_valid = round(last_valid, 0)
+
+        print(f"last_valid = {last_valid}")
+
         return last_valid
 
 
@@ -550,35 +592,60 @@ class PrepData:
     def array_of_outer_row_formation(self,
                                      unit_np_DF: np.array):
 
-        count_time_cycles = 1
-        last_time_cycles = []
-        # count_unit_number = unit_np_DF[1, 0]
-        count_unit_number = 0
-        current_str_num = 0
-        str_df, col_df  = unit_np_DF.shape
+        # # count_time_cycles = 1
+        # last_time_cycles = []
+        # # count_unit_number = unit_np_DF[1, 0]
+        # count_unit_number = 0
+        # # current_str_num = 0
+        # # str_df, col_df  = unit_np_DF.shape
 
-        for index, str in enumerate(unit_np_DF):
-            unit_number = unit_np_DF[index, 0]
-            #print(unit_number)
-            if index == len(unit_np_DF) - 1:
-                last_time_cycles.append(index)
-                continue
+        # for index, str in enumerate(unit_np_DF):
+        #     unit_number = unit_np_DF[index, 0]
+        #     #print(unit_number)
+        #     if index == len(unit_np_DF) - 1:
+        #         last_time_cycles.append(index)
+        #         continue
 
-            if count_unit_number == 0:
-                count_unit_number = unit_number
-                continue
+        #     if count_unit_number == 0:
+        #         count_unit_number = unit_number
+        #         continue
 
-            # if(count_unit_number != unit_number or current_str_num == str_df - 1):
-            if(count_unit_number != unit_number):
-                last_time_cycles.append(index - 1)
-                count_unit_number = unit_number
+        #     # if(count_unit_number != unit_number or current_str_num == str_df - 1):
+        #     if(count_unit_number != unit_number):
+        #         last_time_cycles.append(index - 1)
+        #         count_unit_number = unit_number
             
-            # count_time_cycles += 1
-            # current_str_num += 1
+        #     # count_time_cycles += 1
+        #     # current_str_num += 1
         
-        # last_time_cycles[-1] += 1
+        # # last_time_cycles[-1] += 1
 
-        return last_time_cycles
+        # return last_time_cycles
+
+
+        res = []
+        data = unit_np_DF[:, 0]
+
+        print(data)
+
+        index = 0
+        for n in data:
+            if index == 0:
+                index += 1
+                continue
+            
+            if index == len(data)-1:
+                res.append(index + 1)
+                break
+            
+            if n != data[index - 1]:
+                res.append(index)
+            
+            index += 1
+
+        print(f"outer_row = {res}")
+
+        return res
 
 
 #1 - 0    [[1, 1, 1]
@@ -658,6 +725,10 @@ class PrepData:
         self.status = status
 
 
+    @classmethod
+    def get_np_arr_from_csv(self, path_cfv: str) -> np.array:
+        res = genfromtxt(path_cfv, delimiter=',')
+        return res
 
 
 

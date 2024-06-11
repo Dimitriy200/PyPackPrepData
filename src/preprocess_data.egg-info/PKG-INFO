@@ -1,18 +1,18 @@
 Metadata-Version: 2.1
 Name: preprocess-data
-Version: 0.1.1
+Version: 0.1.9
 Summary: package for preprocessing data
 Author: DZ
 Project-URL: Homepage, https://github.com/Dimitriy200/prepData
 Classifier: Programming Language :: Python :: 3
 Classifier: License :: OSI Approved :: MIT License
 Classifier: Operating System :: OS Independent
-Requires-Python: >=3.8.0
+Requires-Python: >=3.10.0
 Description-Content-Type: text/markdown
 License-File: LICENSE
-Requires-Dist: numpy>=1.22.1
+Requires-Dist: setuptools>=40.8.0
+Requires-Dist: numpy
 Requires-Dist: scikit-learn
-Requires-Dist: setuptools==57.5.0
 
 ## Дом проекта
 <a href = "https://test.pypi.org/project/preprocess-data/0.0.8/">PyPi</a>
