@@ -29,7 +29,7 @@ def check_start_all_func(dir_final = dir_final,
                       dir_processed,
                       dir_final)
 
-# check_start_all_func()
+check_start_all_func()
 
 
 #--------------------------------------------------------------------
@@ -185,4 +185,16 @@ def cocate_data():
 
     np.savetxt(dir_df = os.path.join(base_dir, "data", "processed", "All_FD.csv"))
 
-cocate_data()
+# cocate_data()
+
+
+#--------------------------------------------------------------------
+
+def check_different_train_and_valid():
+    pr = PrepData()
+    pr.different_train_and_valid(os.path.join(base_dir, "data", "processed"),
+                                 os.path.join(base_dir, "data", "final"))
+
+# check_different_train_and_valid()
+
+#--------------------------------------------------------------------

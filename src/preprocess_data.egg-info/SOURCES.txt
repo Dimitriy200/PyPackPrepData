@@ -3,7 +3,7 @@ README.md
 pyproject.toml
 src/prepData/__init__.py
 src/prepData/prepData.py
-src/prepData/test1.py
+src/prepData/tests.py
 src/prepData/__pycache__/prepData.cpython-311.pyc
 src/preprocess_data.egg-info/PKG-INFO
 src/preprocess_data.egg-info/SOURCES.txt

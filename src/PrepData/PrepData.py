@@ -10,6 +10,7 @@ from sklearn.impute import SimpleImputer, KNNImputer
 from sklearn.preprocessing import StandardScaler
 from sklearn.pipeline import Pipeline
 from numpy import genfromtxt
+from sklearn.model_selection import train_test_split
 
 from typing import Dict, List, Any
 
@@ -224,52 +225,41 @@ class PrepData:
     def different_train_and_valid(self,
                                   inp_path: str,
                                   out_path: str,
-                                  procent_train: str = 30) -> str:
+                                  procent_train: float = .7) -> str:
 
-        file_Name_Train_DF = "Train.csv"
-        file_Name_Valid_DF = "Valid.csv"
+        Name_Train_Normal_DF =  "Train_Normal.csv"
+        Name_Test_Normal_DF  =  "Test_Normal.csv"
+        Name_Valid_Anomal_DF =  "Valid_Anomal.csv"
 
-        # list_units = os.listdir(inp_path)
-
-        data_np = genfromtxt(inp_path, delimiter = ',')
-
-        # set_data_np = set(data_np)
-        
-        # if len(set_data_np) == 1 and list(set_data_np)[0] == 0:
-        #     print("Массив пустой")
-        #     return "False"
-
-        if not np.any(data_np):
-            print("Массив пустой")
-            return "False"
+        list_units = os.listdir(inp_path)
     
-        str_df, col_df  = data_np.shape
-
-        np_train = np.zeros(col_df)
-        np_valid = np.zeros(col_df)
-        
-
-        # for unit in list_units
+        for file in list_units:  
             
-            # unit_np_DF = genfromtxt(os.path.join(inp_path, unit), delimiter = ',')
-            # unit_numbers = unit_np_DF[:, 1]
-        unit_numbers = data_np[:, 0].tolist()
-        
-        last_valid = self.check_min_repeate_units(unit_numbers)
-        
-        last_time_cycles = self.array_of_outer_row_formation(data_np)
-        
-        dict_val_train = self.different_arrays(data_np,
-                                              np_train,
-                                              np_valid,
-                                              last_valid,
-                                              last_time_cycles)
-            
-        
-        np.savetxt(os.path.join(out_path, file_Name_Train_DF), dict_val_train['Mean'], delimiter=",")
-        np.savetxt(os.path.join(out_path, file_Name_Valid_DF), dict_val_train['Small'], delimiter=",")
+            if file == "Normal.csv":
+                norm_data_np = genfromtxt(os.path.join(inp_path, file), delimiter = ',')
 
-        return os.path.join(out_path, file_Name_Train_DF)
+                if not np.any(norm_data_np):
+                    print(f"Массив Normal.csv пустой")
+                    continue
+                else:
+                    train, test = train_test_split(norm_data_np,
+                                                random_state=0,
+                                                train_size = procent_train)
+                    
+                    np.savetxt(os.path.join(out_path, Name_Train_Normal_DF), train, delimiter=",")
+                    np.savetxt(os.path.join(out_path, Name_Test_Normal_DF), test, delimiter=",")
+            
+            elif file == "Anomal.csv":
+                anom_data_np = genfromtxt(os.path.join(inp_path, file), delimiter = ',')
+
+                if not np.any(anom_data_np):
+                    print(f"Массив Anomal.csv пустой")
+                    continue
+                else:
+                    np.savetxt(os.path.join(out_path, Name_Valid_Anomal_DF),
+                            anom_data_np, delimiter=",")
+
+        return os.path.join(out_path, Name_Train_Normal_DF)
 
 
 
@@ -379,10 +369,8 @@ class PrepData:
         self.different_anomaly(prep_dataset,
                                path_processed)
         
-        list_units = os.listdir(path_processed)
-        for file in list_units:
-            self.different_train_and_valid(os.path.join(path_processed, file),
-                                        path_final)
+        self.different_train_and_valid(path_processed,
+                                       path_final)
 
 
     @classmethod
@@ -391,13 +379,13 @@ class PrepData:
         res_arr = []
 
         for one_dict in json_dict_list:
-            res_arr = list(one_dict.values())
-            res_arr = res_arr[:-3]
-            res_arr.append(list(map(float, res_arr)))
+            json_dict = list(one_dict.values())
+            buffer = json_dict[:-3]
+            res_arr.append(list(map(float, buffer)))
 
-        res = np.array(res_arr)
+        res_arr = np.array(res_arr)
 
-        return res
+        return res_arr
 
 
         
