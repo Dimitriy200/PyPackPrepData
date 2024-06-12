@@ -20,7 +20,7 @@ dir_processed = os.path.join(base_dir, "data", "processed")
 #--------------------------------------------------------------------
 
 
-def check_start_all_func(dir_final = dir_final,
+def check_start_all_func_json(dir_final = dir_final,
                          dir_processed = dir_processed,
                          dir_raw = os.path.join(base_dir, "data", "raw", "2024-06-02_2024-06-03_2024-06-04")):
 
@@ -29,7 +29,24 @@ def check_start_all_func(dir_final = dir_final,
                       dir_processed,
                       dir_final)
 
-check_start_all_func()
+# check_start_all_func()
+
+#--------------------------------------------------------------------
+
+def check_start_all_func_csv(dir_final = dir_final,
+                         dir_processed = dir_processed,
+                         dir_raw = os.path.join(base_dir, "data", "raw", "train")):
+    
+    pr = PrepData()
+
+    fd1 = pr.get_np_arr_from_csv(os.path.join(dir_raw, "trainFD001.csv"))
+    fd2 = pr.get_np_arr_from_csv(os.path.join(dir_raw, "trainFD002.csv"))
+    fd3 = pr.get_np_arr_from_csv(os.path.join(dir_raw, "trainFD003.csv"))
+    fd4 = pr.get_np_arr_from_csv(os.path.join(dir_raw, "trainFD004.csv"))
+
+    all_fd = np.concatenate(fd1,fd2, fd3, fd4)
+
+    
 
 
 #--------------------------------------------------------------------
