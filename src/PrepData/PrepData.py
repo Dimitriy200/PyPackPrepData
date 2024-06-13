@@ -32,6 +32,91 @@ class PrepData:
         return self.__defaultPipline
     
     
+    @classmethod
+    def start_prepData(self,
+                       path_raw: str,
+                       path_processed: str,
+                       path_final: str):
+        
+        # Объединяем json-ы в единый датасет
+        dataset_csv = self.jsons_to_list(path_raw)
+        
+        # Получаем длину строк датасета
+        # col = len(dataset_csv[0])
+
+
+        # Преобразуем датасет в numpy array
+        dataset_np = np.array(dataset_csv)
+
+
+        # Получаем стандартизированный и нормированный датасет
+        prep_dataset = self.employ_Pipline(dataset_np,
+                                           new_csv_file_name = "Stand_and_Normalize_Data.csv")
+
+
+        # Разделяем датасет на нормальные и аномальные значеиня
+        name_dir_norm_data = "normal"
+        name_dir_anom_data = "anomal"
+
+        name_file_norm_data = "Normal.csv"
+        name_file_anom_data = "Anomal.csv"
+
+        path_normal = os.path.join(path_processed, name_dir_norm_data)
+        path_anomal = os.path.join(path_processed, name_dir_anom_data)
+
+        self.different_anomaly(prep_dataset,
+                               out_path_normal = path_normal,
+                               out_path_anomal = path_anomal,
+                               Name_Normal_DF = name_file_norm_data,
+                               Name_Anomal_DF = name_file_anom_data)   
+        
+
+        # Делим ANOM данные в соотношении 80/20, где 20% - данные для статичесской валидации
+        path_static_data = os.path.join(path_final, "static_valid")
+
+        name_new_Anomal_data_file = "New_Anomal.csv"
+        name_static_valid_Anomal_data_file = "Satic_validation_Anomal.csv"
+        
+        first_diff_Anomal_data, static_valid_Anomal_data = self.different_data(diff_file_csv_path = os.path.join(path_processed, name_dir_anom_data, name_file_anom_data),
+                                                                               new_file_name_1 = name_new_Anomal_data_file,
+                                                                               new_file_name_2 = name_static_valid_Anomal_data_file,
+                                                                               out_path_file_1 = "",
+                                                                               out_path_file_2 = path_static_data)
+        
+
+        # Делим MORM данные в соотношении 80/20, где 20% - данные для статичесской валидации
+        name_new_Normal_data_file = "Choice_barrier_normal.csv"
+        name_static_valid_Normal_data_file = "Control_barrier_normal.csv"
+
+        first_diff_Normal_data, static_valid_Normal_data = self.different_data(diff_file_csv_path = os.path.join(path_processed, name_dir_anom_data, name_file_anom_data),
+                                                             new_file_name_1 = name_new_Normal_data_file,
+                                                             new_file_name_2 = name_static_valid_Normal_data_file,
+                                                             out_path_file_1 = "",
+                                                             out_path_file_2 = path_static_data)
+
+
+        # Делим оставшиеся Аномальные данные на данные для подбора и контроля барьера
+        path_barrier_data = os.path.join(path_processed, "search_barrier")
+
+        name_file_anomal_choise_barrier = "Choise_barrier_Anomal.csv"
+        name_file_anomal_control_barrier = "Control_barrier_Anomal.csv"
+
+        ch_barrier_anomal, cntr_barrier_anomal = self.different_data(inp_data = first_diff_Normal_data,
+                                                                     new_file_name_1 = name_file_anomal_choise_barrier,
+                                                                     new_file_name_2 = name_file_anomal_control_barrier,
+                                                                     out_path_file_1 = path_barrier_data,
+                                                                     out_path_file_2 = path_barrier_data)
+
+
+        # Вычисляем Процент для деления нормальных данных для их разделения в следующем шаге
+
+
+        # Делим оставшиеся Нормальные данные на данные для подбора и контроля барьера
+
+        # 
+        
+
+
     #@staticmethod
     @classmethod
     def createDefault_Pipline(self) -> Pipeline:
@@ -113,7 +198,7 @@ class PrepData:
                         # inp_dir: str,       # B inpFilesList и outFilesList указывать полный путь
                         array_np: np.array,
                         #out_dir: str,
-                        new_csv_file_name: str,
+                        # new_csv_file_name: str,
                         pipline: Pipeline = defaultPipline,) -> np.array:
         
         status_log  =           ["Preprocess data finished successfull",        "Preprocess data finished error"]
@@ -125,8 +210,8 @@ class PrepData:
         # if out_dir[-1] != '/':
         #     out_dir = f"{out_dir}/"
 
-        if ".csv" not in new_csv_file_name:
-            new_csv_file_name = f"{new_csv_file_name}.csv"
+        # if ".csv" not in new_csv_file_name:
+        #     new_csv_file_name = f"{new_csv_file_name}.csv"
 
         # Получаем все документы в папке
         # print(get_doc_log[0])
@@ -182,11 +267,11 @@ class PrepData:
     @classmethod
     def different_anomaly(self,
                           dataFrame: np.array,
-                          out_path: str,
-                          last_procent: int = 0.1) -> dict:
-    
-        Name_Normal_DF = "Normal.csv"
-        Name_Anomal_DF = "Anomal.csv"
+                          out_path_normal: str,
+                          out_path_anomal: str,
+                          Name_Normal_DF,
+                          Name_Anomal_DF,
+                          last_procent: int = 0.2) -> dict:
 
         # list_units = os.listdir(inp_path)
 
@@ -195,7 +280,6 @@ class PrepData:
 
         np_train = np.zeros(col_df)
         np_valid = np.zeros(col_df)
-        
 
         # for unit in list_units:
 
@@ -207,18 +291,16 @@ class PrepData:
         last_valid = self.check_min_repeate_units(last_time_cycles,
                                                     procent_quitting = last_procent)
         
-        
         dict_val_train = self.different_arrays(dataFrame,
                                                np_train,
                                                np_valid,
                                                last_valid,
                                                last_time_cycles)
         
-        np.savetxt(os.path.join(out_path, Name_Normal_DF), dict_val_train['Mean'], delimiter=",")
-        np.savetxt(os.path.join(out_path, Name_Anomal_DF), dict_val_train['Small'], delimiter=",")
+        np.savetxt(os.path.join(out_path_normal, Name_Normal_DF), dict_val_train['Normal'], delimiter=",")
+        np.savetxt(os.path.join(out_path_anomal, Name_Anomal_DF), dict_val_train['Anomal'], delimiter=",")
 
-        return {"fileName_Normal_DF": Name_Normal_DF,
-                "fileName_Anomal_DF": Name_Anomal_DF}
+        return
 
 
     @classmethod
@@ -260,6 +342,41 @@ class PrepData:
                             anom_data_np, delimiter=",")
 
         return os.path.join(out_path, Name_Train_Normal_DF)
+
+
+    @classmethod
+    def different_data(self,
+                       new_file_name_1: str,
+                       new_file_name_2: str,
+                       out_path_file_1: str,
+                       out_path_file_2: str,
+                       diff_file_csv_path: str = "",
+                       inp_data: np.array = None,
+                       procent_train: float = .8):
+
+        if (diff_file_csv_path == "") and (inp_data != None):
+            diff_df = inp_data
+        
+        elif (diff_file_csv_path != "") and (inp_data == None):
+            diff_df = genfromtxt(diff_file_csv_path, delimiter=',')
+        
+        else:
+            print("ОШИБКА, ВЫБЕРИТЕ ЛИБО ЗАГРУЗКУ ИЗ ФАЙЛА, ЛИБО ИЗ ОБЪЕКТА")
+            return [0], [0]
+
+        df_1, df_2 = train_test_split(diff_df,
+                                      random_state=0,
+                                      train_size = procent_train)
+        
+        if out_path_file_1 != "":
+            np.savetxt(os.path.join(out_path_file_1, new_file_name_1),
+                       df_1, delimiter=",")
+        
+        if out_path_file_2 != "":
+            np.savetxt(os.path.join(out_path_file_2, new_file_name_2),
+                       df_2, delimiter=",")
+        
+        return df_1, df_2
 
 
     @classmethod
@@ -342,34 +459,6 @@ class PrepData:
         np.savetxt(os.path.join(out_csv_dir, name_out_csv),
                    res,
                    delimiter = ",")
-
-
-    @classmethod
-    def start_prepData(self,
-                       path_raw: str,
-                       path_processed: str,
-                       path_final: str):
-        
-        dataset_csv = self.jsons_to_list(path_raw)
-
-        # print(f"dataset_csv - {dataset_csv}")
-        
-        col = len(dataset_csv[0])
-
-        # dataset_np = np.zeros(col)
-        # dataset_np = np.vstack(dataset_csv)
-        dataset_np = np.array(dataset_csv)
-
-        # print(f"dataset_np - {dataset_np}")
-
-        prep_dataset = self.employ_Pipline(dataset_np,
-                                           new_csv_file_name = "NewData.csv")
-
-        self.different_anomaly(prep_dataset,
-                               path_processed)
-        
-        self.different_train_and_valid(path_processed,
-                                       path_final)
 
 
     @classmethod
@@ -721,33 +810,6 @@ class PrepData:
 
 #_______________________________________________________________________________________________
 
-    # def check_type(self, dataset : np.array) -> bool:
-
-    #     status_log = ["Check data finished successfull", "Check data finished error"]
-
-    #     # Удаляю строку с названиями столбцов
-    #     dataset_v = np.delete(dataset, (0), axis=0)
-
-    #     try:
-    #         for st in dataset_v:
-    #             for col in st:
-                    
-    #                 if(np.isnan(col)):
-    #                     print(status_log[0])
-    #                     self.status = True
-    #                     return self.status
-            
-    #         print(status_log[0])
-    #         self.status = False
-    #         return self.status
-
-    #     except:
-    #         print(status_log[1])
-    #         self.status = False
-    #         return self.status
-
-    # ----------------------------------
-
     #               Norm                                                   Anom
     #           80      Val_model 20                                   80      Val_model 20
 # Подбор_Барьера x шт    Контроль_барьера x' шт      Подбор_Барьера x = 80(80)      Контроль барьера x' = 20(80)
@@ -759,9 +821,10 @@ class PrepData:
     # Контроль_барьера (объединить) для обоих ввести метки
 
     # алгоритм 
-    # 1. делить датасет на норм и аном данные
-    # 2. делить и норм и аном на 2 датасета в соотношениии 20/80. 20е - откладываем для статич валидации.
-    # 3. из 80 %аномальных делить на Подбор_Барьера x = 80(80) и Контроль барьера x' = 20(80). Разметить.
+    # 1. делить датасет на норм и аном данные   [v]
+    # 2. делить и норм и аном на 2 датасета в соотношениии 20/80. 20е - откладываем для статич валидации.    [v]
+    # 3. из 80% Аномальных делить на Подбор_Барьера x = 80(80) и Контроль барьера x' = 20(80). Разметить.    [v] []
+    #   3.1 
     # 4. из 80% норм формируем x и x' шт данных.
     # 5. формируем два минидатасета на подбор барьера и контроль барьера. каждый содержит одинаковое кол-во норм и аном данных в x+x и x'+x' сооств.
     # 5.1 на датасете train 80 обучаем модель автокодир-к
