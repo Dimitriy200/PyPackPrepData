@@ -31,30 +31,71 @@ class PrepData:
     def defaultPipline(self):
         return self.__defaultPipline
     
-    
+
     @classmethod
-    def start_prepData(self,
-                       path_raw: str,
-                       path_processed: str,
-                       path_final: str):
+    def start_prepData_json(self,
+                            path_raw: str,
+                            path_processed: str,
+                            path_final: str):
         
+
         # Объединяем json-ы в единый датасет
+        print("START READ DATA FROM JSON")
         dataset_csv = self.jsons_to_list(path_raw)
-        
-        # Получаем длину строк датасета
-        # col = len(dataset_csv[0])
 
 
         # Преобразуем датасет в numpy array
         dataset_np = np.array(dataset_csv)
 
+        self.process_different_data(dataset_np = dataset_np,
+                                    path_raw = path_raw,
+                                    path_processed = path_processed,
+                                    path_final = path_final)
+
+
+    @classmethod
+    def start_prepData_csv(self,
+                           path_raw: str,
+                           path_processed: str,
+                           path_final: str):
+        
+
+        # считываем даннные из всех csv
+        print("START READ DATA FROM CSV")
+        list_csv = os.listdir(path_raw)
+        if len(list_csv) > 0:
+            all_np_csv = genfromtxt(os.path.join(path_raw, list_csv[0]), delimiter=',')
+            
+            for csv in list_csv:
+                if csv == list_csv[0]:
+                    continue
+                
+                buffer_np = genfromtxt(os.path.join(path_raw, csv), delimiter=',')
+                all_np_csv = np.concatenate((all_np_csv, buffer_np), axis=0)
+
+
+        self.process_different_data(dataset_np = all_np_csv,
+                                    path_raw = path_raw,
+                                    path_processed = path_processed,
+                                    path_final = path_final)
+
+
+    @classmethod
+    def process_different_data(self,
+                               dataset_np: np.array,
+                               path_raw: str,
+                               path_processed: str,
+                               path_final: str):
+        
 
         # Получаем стандартизированный и нормированный датасет
-        prep_dataset = self.employ_Pipline(dataset_np,
-                                           new_csv_file_name = "Stand_and_Normalize_Data.csv")
+        print("START PIPELINE")
+        prep_dataset = self.employ_Pipline(dataset_np)
 
 
         # Разделяем датасет на нормальные и аномальные значеиня
+        print("START DIFFERENT TO NORMAL AND ANOMAL")
+
         name_dir_norm_data = "normal"
         name_dir_anom_data = "anomal"
 
@@ -72,6 +113,8 @@ class PrepData:
         
 
         # Делим ANOM данные в соотношении 80/20, где 20% - данные для статичесской валидации
+        print("START DIFFERENT ANOMAL TO 80 / 20 (STATIC VALIDATE)")
+
         path_static_data = os.path.join(path_final, "static_valid")
 
         name_new_Anomal_data_file = "New_Anomal.csv"
@@ -84,7 +127,9 @@ class PrepData:
                                                                                out_path_file_2 = path_static_data)
         
 
-        # Делим MORM данные в соотношении 80/20, где 20% - данные для статичесской валидации
+        # Делим NORM данные в соотношении 80/20, где 20% - данные для статичесской валидации
+        print("START DIFFERENT NORMAL TO 80 / 20 (STATIC VALIDATE)")
+
         name_new_Normal_data_file = "Choice_barrier_normal.csv"
         name_static_valid_Normal_data_file = "Control_barrier_normal.csv"
 
@@ -95,26 +140,61 @@ class PrepData:
                                                              out_path_file_2 = path_static_data)
 
 
-        # Делим оставшиеся Аномальные данные на данные для подбора и контроля барьера
+        # Делим оставшиеся ANOM данные на данные для подбора и контроля барьера
+        print("START DIFFERENT ANOMAL TO 80 / 20 (CHOISE AND CONTROL BARRIER)")
+        
         path_barrier_data = os.path.join(path_processed, "search_barrier")
 
         name_file_anomal_choise_barrier = "Choise_barrier_Anomal.csv"
         name_file_anomal_control_barrier = "Control_barrier_Anomal.csv"
 
-        ch_barrier_anomal, cntr_barrier_anomal = self.different_data(inp_data = first_diff_Normal_data,
+        ch_barrier_anomal, cntr_barrier_anomal = self.different_data(inp_data = first_diff_Anomal_data,
                                                                      new_file_name_1 = name_file_anomal_choise_barrier,
                                                                      new_file_name_2 = name_file_anomal_control_barrier,
                                                                      out_path_file_1 = path_barrier_data,
                                                                      out_path_file_2 = path_barrier_data)
 
 
-        # Вычисляем Процент для деления нормальных данных для их разделения в следующем шаге
+        # Вычисляем Процент для деления NORM данных для их разделения в следующем шаге
+        print("START COUNT PROCENT ANORMAL FROM NORMAL")
+
+        str_first_diff_Anomal_data, col_first_diff_Anomal_data  = first_diff_Anomal_data.shape
+        str_first_diff_Normal_data, col_first_diff_Normal_data = first_diff_Normal_data.shape
+
+        procent_Anom_from_Norm_barrier = str_first_diff_Anomal_data / str_first_diff_Normal_data
 
 
-        # Делим оставшиеся Нормальные данные на данные для подбора и контроля барьера
-
-        # 
+        # Отделяеем от NORM часть, равную Anom_barriers
+        print("START DIFFERENT NORMAL TO 80 / 20 (CHOISE AND CONTROL BARRIER)")
         
+        sec_diff_Normal_data, df_for_Norm_barrier = self.different_data(inp_data = first_diff_Normal_data,
+                                                                        procent_train = procent_Anom_from_Norm_barrier)
+
+
+        # Делим оставшиеся NORM данные на данные для подбора и контроля барьера
+        print("START DIFFERENT NORMAL TO 80 / 20 (CHOISE AND CONTROL BARRIER)")
+
+        name_file_Normal_choise_barrier = "Choise_barrier_Normal.csv"
+        name_file_Normal_control_barrier = "Control_barrier_Normal.csv"
+
+        ch_barrier_Normal, cntr_barrier_Normal = self.different_data(inp_data = df_for_Norm_barrier,
+                                                                     new_file_name_1 = name_file_Normal_choise_barrier,
+                                                                     new_file_name_2 = name_file_Normal_control_barrier,
+                                                                     out_path_file_1 = path_barrier_data,
+                                                                     out_path_file_2 = path_barrier_data)
+        
+        # Делим Оставшиеся NORM ДАННЫЕ НА TRAIN и TEST
+        print("START DIFFERENT NORMAL TO 80 / 20 (TRAIN AND TEST)")
+
+        name_traine_Norm_data = "train.csv"
+        name_test_Norm_data = "test.csv"
+        path_train_test_data = os.path.join(path_final, "train_and_test")
+
+        norm_train, norm_test = self.different_data(inp_data = sec_diff_Normal_data,
+                                                    new_file_name_1 = name_traine_Norm_data,
+                                                    new_file_name_2 = name_test_Norm_data,
+                                                    out_path_file_1 = path_train_test_data,
+                                                    out_path_file_2 = path_train_test_data)
 
 
     #@staticmethod
@@ -824,9 +904,8 @@ class PrepData:
     # 1. делить датасет на норм и аном данные   [v]
     # 2. делить и норм и аном на 2 датасета в соотношениии 20/80. 20е - откладываем для статич валидации.    [v]
     # 3. из 80% Аномальных делить на Подбор_Барьера x = 80(80) и Контроль барьера x' = 20(80). Разметить.    [v] []
-    #   3.1 
-    # 4. из 80% норм формируем x и x' шт данных.
-    # 5. формируем два минидатасета на подбор барьера и контроль барьера. каждый содержит одинаковое кол-во норм и аном данных в x+x и x'+x' сооств.
+    # 4. из 80% норм формируем x и x' шт данных. [v]
+    # 5. формируем два минидатасета на подбор барьера и контроль барьера. каждый содержит одинаковое кол-во норм и аном данных в x+x и x'+x' сооств. [v]
     # 5.1 на датасете train 80 обучаем модель автокодир-к
     # 5.2 валидируем на датасете test 20
     # 6. пропускаем датасет подбор баръера через модель.

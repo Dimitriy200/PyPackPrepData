@@ -25,13 +25,28 @@ def check_start_all_func_json(dir_final = dir_final,
                          dir_raw = os.path.join(base_dir, "data", "raw", "2024-06-02_2024-06-03_2024-06-04")):
 
     pr = PrepData()
-    pr.start_prepData(dir_raw,
-                      dir_processed,
-                      dir_final)
+    pr.start_prepData_json(dir_raw,
+                          dir_processed,
+                          dir_final)
 
-# check_start_all_func()
+# check_start_all_func_json()
 
 #--------------------------------------------------------------------
+
+
+def check_start_all_func_csv(dir_final = dir_final,
+                             dir_processed = dir_processed,
+                             dir_raw = os.path.join(base_dir, "data", "raw", "train")):
+
+    pr = PrepData()
+    pr.start_prepData_csv(dir_raw,
+                           dir_processed,
+                           dir_final)
+
+check_start_all_func_csv()
+
+#--------------------------------------------------------------------
+
 
 def check_start_all_func_csv(dir_final = dir_final,
                          dir_processed = dir_processed,
