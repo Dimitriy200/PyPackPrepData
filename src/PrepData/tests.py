@@ -36,7 +36,7 @@ def check_start_all_func_json(dir_final = dir_final,
 
 def check_start_all_func_csv(dir_final = dir_final,
                              dir_processed = dir_processed,
-                             dir_raw = os.path.join(base_dir, "data", "raw", "train")):
+                             dir_raw = os.path.join(base_dir, "data", "raw", "for_tests")):
 
     pr = PrepData()
     pr.start_prepData_csv(dir_raw,

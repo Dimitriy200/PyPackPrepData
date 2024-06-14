@@ -92,6 +92,8 @@ class PrepData:
         print("START PIPELINE")
         prep_dataset = self.employ_Pipline(dataset_np)
 
+        print(f"prep_dataset = {prep_dataset.shape}")
+
 
         # Разделяем датасет на нормальные и аномальные значеиня
         print("START DIFFERENT TO NORMAL AND ANOMAL")
@@ -105,11 +107,16 @@ class PrepData:
         path_normal = os.path.join(path_processed, name_dir_norm_data)
         path_anomal = os.path.join(path_processed, name_dir_anom_data)
 
-        self.different_anomaly(prep_dataset,
-                               out_path_normal = path_normal,
-                               out_path_anomal = path_anomal,
-                               Name_Normal_DF = name_file_norm_data,
-                               Name_Anomal_DF = name_file_anom_data)   
+        norm_and_anom_dict = self.different_anomaly(prep_dataset,
+                                                    out_path_normal = path_normal,
+                                                    out_path_anomal = path_anomal,
+                                                    Name_Normal_DF = name_file_norm_data,
+                                                    Name_Anomal_DF = name_file_anom_data)
+
+        norm_df = norm_and_anom_dict["Normal"]
+        anom_df = norm_and_anom_dict["Anomal"]
+        print(f"norm = {norm_df.shape}")
+        print(f"anom = {anom_df.shape}")   
         
 
         # Делим ANOM данные в соотношении 80/20, где 20% - данные для статичесской валидации
@@ -126,20 +133,26 @@ class PrepData:
                                                                                out_path_file_1 = "",
                                                                                out_path_file_2 = path_static_data)
         
+        print(f"first_diff_Anomal_data = {first_diff_Anomal_data.shape}")
+        print(f"static_valid_Anomal_data = {static_valid_Anomal_data.shape}")
 
+        
         # Делим NORM данные в соотношении 80/20, где 20% - данные для статичесской валидации
         print("START DIFFERENT NORMAL TO 80 / 20 (STATIC VALIDATE)")
 
-        name_new_Normal_data_file = "Choice_barrier_normal.csv"
-        name_static_valid_Normal_data_file = "Control_barrier_normal.csv"
+        name_new_Normal_data_file = "New_narmal.csv"
+        name_static_valid_Normal_data_file = "Satic_validation_Normal.csv"
 
-        first_diff_Normal_data, static_valid_Normal_data = self.different_data(diff_file_csv_path = os.path.join(path_processed, name_dir_anom_data, name_file_anom_data),
+        first_diff_Normal_data, static_valid_Normal_data = self.different_data(diff_file_csv_path = os.path.join(path_processed, name_dir_norm_data, name_file_norm_data),
                                                              new_file_name_1 = name_new_Normal_data_file,
                                                              new_file_name_2 = name_static_valid_Normal_data_file,
                                                              out_path_file_1 = "",
                                                              out_path_file_2 = path_static_data)
 
-
+        print(f"first_diff_Normal_data = {first_diff_Normal_data.shape}")
+        print(f"static_valid_Normal_data = {static_valid_Normal_data.shape}")
+        
+        
         # Делим оставшиеся ANOM данные на данные для подбора и контроля барьера
         print("START DIFFERENT ANOMAL TO 80 / 20 (CHOISE AND CONTROL BARRIER)")
         
@@ -154,6 +167,9 @@ class PrepData:
                                                                      out_path_file_1 = path_barrier_data,
                                                                      out_path_file_2 = path_barrier_data)
 
+        print(f"ch_barrier_anomal = {ch_barrier_anomal.shape}")
+        print(f"cntr_barrier_anomal = {cntr_barrier_anomal.shape}")
+
 
         # Вычисляем Процент для деления NORM данных для их разделения в следующем шаге
         print("START COUNT PROCENT ANORMAL FROM NORMAL")
@@ -162,13 +178,18 @@ class PrepData:
         str_first_diff_Normal_data, col_first_diff_Normal_data = first_diff_Normal_data.shape
 
         procent_Anom_from_Norm_barrier = str_first_diff_Anomal_data / str_first_diff_Normal_data
+        print(f"ПРОЦЕНТ ДЛЯ РАСЧЕТА ЧАСТИ ОТ НОРМАЛЬНЫХ ДАННЫХ РАВЕН: {str_first_diff_Anomal_data} / {str_first_diff_Normal_data} = {procent_Anom_from_Norm_barrier}")
 
 
         # Отделяеем от NORM часть, равную Anom_barriers
         print("START DIFFERENT NORMAL TO 80 / 20 (CHOISE AND CONTROL BARRIER)")
         
         sec_diff_Normal_data, df_for_Norm_barrier = self.different_data(inp_data = first_diff_Normal_data,
-                                                                        procent_train = procent_Anom_from_Norm_barrier)
+                                                                        procent_train = procent_Anom_from_Norm_barrier,
+                                                                        new_file_name_1 = "",
+                                                                        new_file_name_2 = "",
+                                                                        out_path_file_1 = "",
+                                                                        out_path_file_2 = "")
 
 
         # Делим оставшиеся NORM данные на данные для подбора и контроля барьера
@@ -351,7 +372,7 @@ class PrepData:
                           out_path_anomal: str,
                           Name_Normal_DF,
                           Name_Anomal_DF,
-                          last_procent: int = 0.2) -> dict:
+                          last_procent: int = 0.1) -> dict:
 
         # list_units = os.listdir(inp_path)
 
@@ -380,7 +401,7 @@ class PrepData:
         np.savetxt(os.path.join(out_path_normal, Name_Normal_DF), dict_val_train['Normal'], delimiter=",")
         np.savetxt(os.path.join(out_path_anomal, Name_Anomal_DF), dict_val_train['Anomal'], delimiter=",")
 
-        return
+        return dict_val_train
 
 
     @classmethod
@@ -434,7 +455,7 @@ class PrepData:
                        inp_data: np.array = None,
                        procent_train: float = .8):
 
-        if (diff_file_csv_path == "") and (inp_data != None):
+        if (diff_file_csv_path == "") and not (inp_data is None):
             diff_df = inp_data
         
         elif (diff_file_csv_path != "") and (inp_data == None):
@@ -650,7 +671,7 @@ class PrepData:
         status = False
 
         str, col  = dataFrame.shape
-        print(f"str = {str}\ncol = {col}")
+        # print(f"str = {str}\ncol = {col}")
         res_dataFrame = np.zeros(col)
 
         for line in dataFrame:
@@ -738,7 +759,7 @@ class PrepData:
         last_valid = last_valid * procent_quitting
         last_valid = round(last_valid, 0)
 
-        print(f"last_valid = {last_valid}")
+        # print(f"last_valid = {last_valid}")
 
         return last_valid
 
@@ -782,7 +803,7 @@ class PrepData:
         res = []
         data = unit_np_DF[:, 0]
 
-        print(data)
+        # print(data)
 
         index = 0
         for n in data:
@@ -799,7 +820,7 @@ class PrepData:
             
             index += 1
 
-        print(f"outer_row = {res}")
+        # print(f"outer_row = {res}")
 
         return res
 
@@ -871,8 +892,8 @@ class PrepData:
             # count_time_cycles += 1
             # current_str_num += 1
 
-        return {'Mean': np_train,
-                'Small': np_valid}
+        return {'Normal': np_train,
+                'Anomal': np_valid}
 
 
     @classmethod
