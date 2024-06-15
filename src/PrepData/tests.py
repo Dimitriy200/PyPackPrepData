@@ -43,7 +43,19 @@ def check_start_all_func_csv(dir_final = dir_final,
                            dir_processed,
                            dir_final)
 
-check_start_all_func_csv()
+# check_start_all_func_csv()
+
+#--------------------------------------------------------------------
+def check_start_prepData_for_add_traine(dir_final = os.path.join(dir_final, "train_test_json"),
+                                        dir_raw = os.path.join(base_dir, "data", "raw", "2024-06-02_2024-06-03_2024-06-04")):
+
+    pr = PrepData()
+    pr.start_prepData_for_add_traine(path_raw = dir_raw,
+                                     path_final = dir_final,
+                                     Name_file_train = "train_json.csv",
+                                     Name_file_test = "test_json.csv")
+
+check_start_prepData_for_add_traine()
 
 #--------------------------------------------------------------------
 
@@ -60,8 +72,6 @@ def check_start_all_func_csv(dir_final = dir_final,
     fd4 = pr.get_np_arr_from_csv(os.path.join(dir_raw, "trainFD004.csv"))
 
     all_fd = np.concatenate(fd1,fd2, fd3, fd4)
-
-    
 
 
 #--------------------------------------------------------------------

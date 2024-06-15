@@ -26,6 +26,7 @@ class PrepData:
         # Код состояния для функций
         self.status: bool
 
+
     # Вызов дефолтного Pipline - внутренняя функция
     @property
     def defaultPipline(self):
@@ -78,6 +79,32 @@ class PrepData:
                                     path_raw = path_raw,
                                     path_processed = path_processed,
                                     path_final = path_final)
+
+
+    @classmethod
+    def start_prepData_for_add_traine(self,
+                                      path_raw: str,
+                                      path_final: str,
+                                      Name_file_train: str,
+                                      Name_file_test: str):
+        
+        dataset_som = self.jsons_to_list(path_raw)
+        print(f"dataset_som = {dataset_som}")
+        
+        dataset_np = np.array(dataset_som)
+        print(f"dataset_np = {dataset_np}")
+
+        prep_data = self.employ_Pipline(dataset_np)
+        print(f"prep_data = {prep_data}")
+
+
+        train, test = self.different_data(new_file_name_1=Name_file_train,
+                                          new_file_name_2=Name_file_test,
+                                          out_path_file_1=path_final,
+                                          out_path_file_2=path_final,
+                                          inp_data = prep_data)
+        
+        return train, test
 
 
     @classmethod
@@ -300,65 +327,20 @@ class PrepData:
                         array_np: np.array,
                         #out_dir: str,
                         # new_csv_file_name: str,
-                        pipline: Pipeline = defaultPipline,) -> np.array:
+                        pipline: Pipeline = defaultPipline) -> np.array:
         
         status_log  =           ["Preprocess data finished successfull",        "Preprocess data finished error"]
         get_doc_log =           ["Getting a list of documents...",              "Documents have been received"]
-
-        # На конце выходной строки дирректории должна стоять "/"
-        # if inp_dir[-1] != '/':
-        #     inp_dir = f"{inp_dir}/"
-        # if out_dir[-1] != '/':
-        #     out_dir = f"{out_dir}/"
-
-        # if ".csv" not in new_csv_file_name:
-        #     new_csv_file_name = f"{new_csv_file_name}.csv"
-
-        # Получаем все документы в папке
-        # print(get_doc_log[0])
-        # inpFilesList = os.listdir(inp_dir)
-        # outFilesList = inpFilesList
         
-        # Вывод списка файлов в диррекории
-        # for fl in inpFilesList:
-        #     print("   .../" + fl)
-            
-        # print(get_doc_log[1])
+        logging.info(f"Start employ_Pipline, array_np = {array_np}")
+        new_array_np = self.to_standardization_df(array_np)
+        logging.info(f"Start employ_Pipline")
 
-        # Применение
-        # for file in inpFilesList:
-        #     if file == ".gitkeep":
-        #         continue
-            
-        #     print("  Processed --> ", file)
-
-        #     # Загружаем i-тый фаил
-        #     dataFrame = genfromtxt(os.path.join(inp_dir, file), delimiter = ',')
-        
-        
-        array_np = self.to_standardization_df(array_np)
-            
-        # Проверяем датасет на пригодность (отсутствие пропусков)
-        # for line in array_np:
-        #     if (self.is_nan_dataFrame_Line(line) == False):
-        #         print("Dataset is BAD Starting standartization dataframe...")
-        #         self.to_standardization_df(array_np)
-        #     else:
-        #         continue
         
         print("Dataset is GOOD  Starting employ pipeline...")
         
-        # newDataFrame = pd.DataFrame(dataFrame, columns = pipline['scaler'].get_feature_names_out(dataFrame.columns))
-        # print(array_np)
-        # array_nd = np.array(array_np)
-        
         new_pipeline = self.createDefault_Pipline()
-        newDataFrame = new_pipeline.fit_transform(array_np)
-        # newDataFrame = pipline.fit_predict(array_np)
-
-        # Сохранение
-        # new_csv_dir_path = os.path.join(out_dir, new_csv_file_name)
-        # np.savetxt(new_csv_dir_path, newDataFrame, delimiter = ",")
+        newDataFrame = new_pipeline.fit_transform(new_array_np)
 
         res_dataframe = np.array(newDataFrame)
         

@@ -1,6 +1,8 @@
 LICENSE
 README.md
 pyproject.toml
+dist/preprocess_data-0.1.10-py3-none-any.whl
+dist/preprocess_data-0.1.10.tar.gz
 src/prepData/__init__.py
 src/prepData/prepData.py
 src/prepData/tests.py
