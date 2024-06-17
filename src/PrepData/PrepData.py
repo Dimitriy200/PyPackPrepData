@@ -437,7 +437,8 @@ class PrepData:
                 else:
                     train, test = train_test_split(norm_data_np,
                                                 random_state=0,
-                                                train_size = procent_train)
+                                                train_size = procent_train,
+                                                shuffle = False)
                     
                     np.savetxt(os.path.join(out_path, Name_Train_Normal_DF), train, delimiter=",")
                     np.savetxt(os.path.join(out_path, Name_Test_Normal_DF), test, delimiter=",")
@@ -477,7 +478,8 @@ class PrepData:
 
         df_1, df_2 = train_test_split(diff_df,
                                       random_state=0,
-                                      train_size = procent_train)
+                                      train_size = procent_train,
+                                      shuffle = False)
                 
         if out_path_file_1 != "":
             logging.info(f"df_1 = {df_1.shape}")

@@ -145,7 +145,7 @@ def check_start_prepData_csv(dir_final = dir_final,
     pr.start_prepData_csv(path_raw = dir_raw,
                           path_processed = dir_processed,
                           path_final = dir_final,
-                          last_procent = 0.1)
+                          last_procent = 0.3)
 
 check_start_prepData_csv()
 
