@@ -43,6 +43,42 @@ def repl_numpy():
 
 #--------------------------------------------------------------------
 
+def diff_arr():
+    arr = [5, 10, 14, 20, 35, 40] # res = [5, ]
+    res_arr = []
+
+    clk = 0
+    for i in arr:
+        if i == arr[0]:
+            res_arr.append(i)
+            clk += 1
+        else:
+            buf = arr[clk - 1]
+            res_arr.append(i - buf)
+            clk += 1
+    
+    print(res_arr)
+
+# diff_arr()
+
+#--------------------------------------------------------------------
+
+def del_arr():
+    pr = PrepData()
+    arr = np.array(
+        [[1, 2, 2],
+         [np.nan, np.nan, np.nan],
+         [2, 3, 4],
+         [3, 7, 5]])
+    
+    res_arr = np.isnan(arr[:, :])
+    print(res_arr)
+
+# del_arr()
+
+#--------------------------------------------------------------------
+
+
 def repl_df():
     pr = PrepData()
     # FD_001 - 100
@@ -101,13 +137,29 @@ def check_start_all_func_json(dir_final = dir_final,
 #--------------------------------------------------------------------
 
 
+def check_start_prepData_csv(dir_final = dir_final,
+                             dir_processed = dir_processed,
+                             dir_raw = os.path.join(base_dir, "data", "raw", "new_train", "new_all_train.csv")): #prep_new_all_train.csv
+    
+    pr = PrepData()
+    pr.start_prepData_csv(path_raw = dir_raw,
+                          path_processed = dir_processed,
+                          path_final = dir_final,
+                          last_procent = 0.1)
+
+check_start_prepData_csv()
+
+#--------------------------------------------------------------------
+
+
+
 def check_different_anomaly(dir_final = dir_final,
                              dir_processed = dir_processed,
                              dir_raw = os.path.join(base_dir, "data", "raw", "new_train"),
-                             last_procent = 0.1):
+                             last_procent = 0.2):
 
     pr = PrepData()
-    data = pr.get_np_arr_from_csv(os.path.join(dir_raw, "new_all_train.csv"))
+    data = pr.get_np_arr_from_csv(os.path.join(dir_raw, "prep_new_all_train.csv")) #new_train_FD001.csv
 
     pr.different_anomaly(dataFrame=data,
                          out_path_normal = os.path.join(dir_raw),
@@ -115,8 +167,9 @@ def check_different_anomaly(dir_final = dir_final,
                          Name_Normal_DF = "test_norm.csv",
                          Name_Anomal_DF = "test_anom.csv",
                          last_procent = last_procent)
+    
 
-check_different_anomaly()
+# check_different_anomaly()
 
 #--------------------------------------------------------------------
 

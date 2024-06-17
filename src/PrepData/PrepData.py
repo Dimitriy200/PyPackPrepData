@@ -628,9 +628,9 @@ class PrepData:
         dataFrame = self.delete_names(dataFrame)
         logging.info(f"FINISH delete_names")
 
-        # logging.info(f"START delete_nan_str")
-        # dataFrame = self.delete_nan_str(dataFrame)
-        # logging.info(f"FINISH delete_nan_str")
+        logging.info(f"START delete_nan_str")
+        dataFrame = self.delete_nan_str(dataFrame)
+        logging.info(f"FINISH delete_nan_str")
 
         self.out_info(True, status_log[0])
         return dataFrame
@@ -748,6 +748,8 @@ class PrepData:
                                 last_time_cycles: list,
                                 procent_quitting: float):
 
+        logging.info("START check_min_repeate_units")
+        
         # last_valid = 0
         # for num in set(unit_numbers):
         #     if last_valid == 0:
@@ -774,16 +776,32 @@ class PrepData:
         #     index += 1
         
         # [1, ..., ...]
-        last_time_cycles = last_time_cycles[1:]
+        
+        clear_last_time_cycles = last_time_cycles[1:]
 
-        last_valid = min(last_time_cycles)
+        rep_last_time_cycles = []
+        clk = 0
+        for i in clear_last_time_cycles:
+            if i == clear_last_time_cycles[0]:
+                rep_last_time_cycles.append(i)
+                clk += 1
+            else:
+                buf = clear_last_time_cycles[clk - 1]
+                rep_last_time_cycles.append(i - buf)
+                clk += 1
 
-        last_valid = last_valid * procent_quitting
-        last_valid = round(last_valid, 0)
+        logging.info(f"rep_last_time_cycles = {rep_last_time_cycles}")
+
+        last_valid = min(rep_last_time_cycles)
+        logging.info(f"MIN last_valid = {last_valid}")
+
+        new_last_valid = last_valid * procent_quitting
+        res_last_valid = round(new_last_valid, 0)
 
         # print(f"last_valid = {last_valid}")
 
-        return last_valid
+        logging.info("FINISH check_min_repeate_units")
+        return res_last_valid
 
 
     @classmethod
