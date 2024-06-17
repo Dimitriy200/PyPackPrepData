@@ -15,7 +15,6 @@ from sklearn.model_selection import train_test_split
 from typing import Dict, List, Any
 
 
-
 class PrepData:
 
 
@@ -41,7 +40,7 @@ class PrepData:
         
 
         # Объединяем json-ы в единый датасет
-        print("START READ DATA FROM JSON")
+        logging.info("START READ DATA FROM JSON")
         dataset_csv = self.jsons_to_list(path_raw)
 
 
@@ -58,27 +57,35 @@ class PrepData:
     def start_prepData_csv(self,
                            path_raw: str,
                            path_processed: str,
-                           path_final: str):
+                           path_final: str,
+                           last_procent: float):
         
 
         # считываем даннные из всех csv
-        print("START READ DATA FROM CSV")
-        list_csv = os.listdir(path_raw)
-        if len(list_csv) > 0:
-            all_np_csv = genfromtxt(os.path.join(path_raw, list_csv[0]), delimiter=',')
-            
-            for csv in list_csv:
-                if csv == list_csv[0]:
-                    continue
-                
-                buffer_np = genfromtxt(os.path.join(path_raw, csv), delimiter=',')
-                all_np_csv = np.concatenate((all_np_csv, buffer_np), axis=0)
+        logging.info("START READ DATA FROM CSV")
 
+        # list_csv = os.listdir(path_raw)
+        # logging.info(f"CSV FILES IN FILDER: {list_csv}")
+
+        # if len(list_csv) > 0:
+        #     all_np_csv = genfromtxt(os.path.join(path_raw, list_csv[0]), delimiter=',')
+            
+        #     for csv in list_csv:
+        #         logging.info(f"csv file = {csv}")
+        #         if csv == list_csv[0]:
+        #             continue
+                
+        #         buffer_np = genfromtxt(os.path.join(path_raw, csv), delimiter=',')
+        #         all_np_csv = np.concatenate((all_np_csv, buffer_np), axis=0)
+
+        all_np_csv = genfromtxt(path_raw, delimiter=',')
+        logging.info(f"RESULT ARR = {all_np_csv.shape}")
 
         self.process_different_data(dataset_np = all_np_csv,
                                     path_raw = path_raw,
                                     path_processed = path_processed,
-                                    path_final = path_final)
+                                    path_final = path_final,
+                                    last_procent = last_procent)
 
 
     @classmethod
@@ -89,13 +96,13 @@ class PrepData:
                                       Name_file_test: str):
         
         dataset_som = self.jsons_to_list(path_raw)
-        print(f"dataset_som = {dataset_som}")
+        # print(f"dataset_som = {dataset_som}")
         
         dataset_np = np.array(dataset_som)
-        print(f"dataset_np = {dataset_np}")
+        # print(f"dataset_np = {dataset_np}")
 
         prep_data = self.employ_Pipline(dataset_np)
-        print(f"prep_data = {prep_data}")
+        # print(f"prep_data = {prep_data}")
 
 
         train, test = self.different_data(new_file_name_1=Name_file_train,
@@ -112,18 +119,19 @@ class PrepData:
                                dataset_np: np.array,
                                path_raw: str,
                                path_processed: str,
-                               path_final: str):
+                               path_final: str,
+                               last_procent: float):
         
 
         # Получаем стандартизированный и нормированный датасет
-        print("START PIPELINE")
+        logging.info("START PIPELINE")
         prep_dataset = self.employ_Pipline(dataset_np)
 
-        print(f"prep_dataset = {prep_dataset.shape}")
+        logging.info(f"prep_dataset = {prep_dataset.shape}")
 
 
         # Разделяем датасет на нормальные и аномальные значеиня
-        print("START DIFFERENT TO NORMAL AND ANOMAL")
+        logging.info("START DIFFERENT TO NORMAL AND ANOMAL")
 
         name_dir_norm_data = "normal"
         name_dir_anom_data = "anomal"
@@ -138,16 +146,17 @@ class PrepData:
                                                     out_path_normal = path_normal,
                                                     out_path_anomal = path_anomal,
                                                     Name_Normal_DF = name_file_norm_data,
-                                                    Name_Anomal_DF = name_file_anom_data)
+                                                    Name_Anomal_DF = name_file_anom_data,
+                                                    last_procent = last_procent)
 
         norm_df = norm_and_anom_dict["Normal"]
         anom_df = norm_and_anom_dict["Anomal"]
-        print(f"norm = {norm_df.shape}")
-        print(f"anom = {anom_df.shape}")   
+        logging.info(f"norm = {norm_df.shape}")
+        logging.info(f"anom = {anom_df.shape}")   
         
 
         # Делим ANOM данные в соотношении 80/20, где 20% - данные для статичесской валидации
-        print("START DIFFERENT ANOMAL TO 80 / 20 (STATIC VALIDATE)")
+        logging.info("START DIFFERENT ANOMAL TO 80 / 20 (STATIC VALIDATE)")
 
         path_static_data = os.path.join(path_final, "static_valid")
 
@@ -160,12 +169,12 @@ class PrepData:
                                                                                out_path_file_1 = "",
                                                                                out_path_file_2 = path_static_data)
         
-        print(f"first_diff_Anomal_data = {first_diff_Anomal_data.shape}")
-        print(f"static_valid_Anomal_data = {static_valid_Anomal_data.shape}")
+        logging.info(f"first_diff_Anomal_data = {first_diff_Anomal_data.shape}")
+        logging.info(f"static_valid_Anomal_data = {static_valid_Anomal_data.shape}")
 
         
         # Делим NORM данные в соотношении 80/20, где 20% - данные для статичесской валидации
-        print("START DIFFERENT NORMAL TO 80 / 20 (STATIC VALIDATE)")
+        logging.info("START DIFFERENT NORMAL TO 80 / 20 (STATIC VALIDATE)")
 
         name_new_Normal_data_file = "New_narmal.csv"
         name_static_valid_Normal_data_file = "Satic_validation_Normal.csv"
@@ -176,12 +185,12 @@ class PrepData:
                                                              out_path_file_1 = "",
                                                              out_path_file_2 = path_static_data)
 
-        print(f"first_diff_Normal_data = {first_diff_Normal_data.shape}")
-        print(f"static_valid_Normal_data = {static_valid_Normal_data.shape}")
+        logging.info(f"first_diff_Normal_data = {first_diff_Normal_data.shape}")
+        logging.info(f"static_valid_Normal_data = {static_valid_Normal_data.shape}")
         
         
         # Делим оставшиеся ANOM данные на данные для подбора и контроля барьера
-        print("START DIFFERENT ANOMAL TO 80 / 20 (CHOISE AND CONTROL BARRIER)")
+        logging.info("START DIFFERENT ANOMAL TO 80 / 20 (CHOISE AND CONTROL BARRIER)")
         
         path_barrier_data = os.path.join(path_processed, "search_barrier")
 
@@ -194,24 +203,24 @@ class PrepData:
                                                                      out_path_file_1 = path_barrier_data,
                                                                      out_path_file_2 = path_barrier_data)
 
-        print(f"ch_barrier_anomal = {ch_barrier_anomal.shape}")
-        print(f"cntr_barrier_anomal = {cntr_barrier_anomal.shape}")
+        logging.info(f"ch_barrier_anomal = {ch_barrier_anomal.shape}")
+        logging.info(f"cntr_barrier_anomal = {cntr_barrier_anomal.shape}")
 
 
         # Вычисляем Процент для деления NORM данных для их разделения в следующем шаге
-        print("START COUNT PROCENT ANORMAL FROM NORMAL")
+        logging.info("START COUNT PROCENT ANORMAL FROM NORMAL")
 
         str_first_diff_Anomal_data, col_first_diff_Anomal_data  = first_diff_Anomal_data.shape
         str_first_diff_Normal_data, col_first_diff_Normal_data = first_diff_Normal_data.shape
 
         procent_Anom_from_Norm_barrier = str_first_diff_Anomal_data / str_first_diff_Normal_data
-        print(f"ПРОЦЕНТ ДЛЯ РАСЧЕТА ЧАСТИ ОТ НОРМАЛЬНЫХ ДАННЫХ РАВЕН: {str_first_diff_Anomal_data} / {str_first_diff_Normal_data} = {procent_Anom_from_Norm_barrier}")
+        logging.info(f"PROCENT FOR  TO CALCULATE THE PART OF NORMAL DATA =: {str_first_diff_Anomal_data} / {str_first_diff_Normal_data} = {procent_Anom_from_Norm_barrier}")
 
 
         # Отделяеем от NORM часть, равную Anom_barriers
-        print("START DIFFERENT NORMAL TO 80 / 20 (CHOISE AND CONTROL BARRIER)")
+        logging.info("START DIFFERENT NORMAL TO 80 / 20 (CHOISE AND CONTROL BARRIER)")
         
-        sec_diff_Normal_data, df_for_Norm_barrier = self.different_data(inp_data = first_diff_Normal_data,
+        df_for_Norm_barrier, sec_diff_Normal_data = self.different_data(inp_data = first_diff_Normal_data,
                                                                         procent_train = procent_Anom_from_Norm_barrier,
                                                                         new_file_name_1 = "",
                                                                         new_file_name_2 = "",
@@ -219,8 +228,12 @@ class PrepData:
                                                                         out_path_file_2 = "")
 
 
+        logging.info(f"sec_diff_Normal_data = {sec_diff_Normal_data.shape}")
+        logging.info(f"df_for_Norm_barrier = {df_for_Norm_barrier.shape}")
+
+
         # Делим оставшиеся NORM данные на данные для подбора и контроля барьера
-        print("START DIFFERENT NORMAL TO 80 / 20 (CHOISE AND CONTROL BARRIER)")
+        logging.info("START DIFFERENT NORMAL TO 80 / 20 (CHOISE AND CONTROL BARRIER)")
 
         name_file_Normal_choise_barrier = "Choise_barrier_Normal.csv"
         name_file_Normal_control_barrier = "Control_barrier_Normal.csv"
@@ -231,8 +244,12 @@ class PrepData:
                                                                      out_path_file_1 = path_barrier_data,
                                                                      out_path_file_2 = path_barrier_data)
         
+        logging.info(f"ch_barrier_Normal = {ch_barrier_Normal.shape}")
+        logging.info(f"cntr_barrier_Normal = {cntr_barrier_Normal.shape}")
+
+
         # Делим Оставшиеся NORM ДАННЫЕ НА TRAIN и TEST
-        print("START DIFFERENT NORMAL TO 80 / 20 (TRAIN AND TEST)")
+        logging.info("START DIFFERENT NORMAL TO 80 / 20 (TRAIN AND TEST)")
 
         name_traine_Norm_data = "train.csv"
         name_test_Norm_data = "test.csv"
@@ -243,6 +260,9 @@ class PrepData:
                                                     new_file_name_2 = name_test_Norm_data,
                                                     out_path_file_1 = path_train_test_data,
                                                     out_path_file_2 = path_train_test_data)
+        
+        logging.info(f"norm_train = {norm_train.shape}")
+        logging.info(f"norm_test = {norm_test.shape}")
 
 
     #@staticmethod
@@ -256,12 +276,12 @@ class PrepData:
             std_scaler = StandardScaler()
             pipe_num = Pipeline([('imputer', simple_inputer), ('scaler', std_scaler)])
 
-            print(status_log[0])
+            logging.info(status_log[0])
             self.status = True
             return pipe_num
         
         except:
-            print(status_log[1])
+            logging.info(status_log[1])
             self.status = False
             return False
     
@@ -332,17 +352,21 @@ class PrepData:
         status_log  =           ["Preprocess data finished successfull",        "Preprocess data finished error"]
         get_doc_log =           ["Getting a list of documents...",              "Documents have been received"]
         
-        logging.info(f"Start employ_Pipline, array_np = {array_np}")
+        logging.info(f"Start employ_Pipline, array_np = \n{array_np[0:3, 0:5]}")
+
         new_array_np = self.to_standardization_df(array_np)
         logging.info(f"Start employ_Pipline")
 
-        
-        print("Dataset is GOOD  Starting employ pipeline...")
+        logging.info("Dataset is GOOD  Starting employ pipeline...")
         
         new_pipeline = self.createDefault_Pipline()
+
+        logging.info(f"START fit_transform")
         newDataFrame = new_pipeline.fit_transform(new_array_np)
+        logging.info(f"FINISH fit_transform")
 
         res_dataframe = np.array(newDataFrame)
+        logging.info(f"Finish employ_Pipline, res_dataframe = \n{res_dataframe[0:3, 0:5]}")
         
         return res_dataframe
 
@@ -370,9 +394,13 @@ class PrepData:
         unit_numbers = dataFrame[:, 0].tolist()
 
         last_time_cycles = self.array_of_outer_row_formation(dataFrame)
+        logging.info(f"last_time_cycles = {last_time_cycles}")
+        print(f"last_time_cycles = {last_time_cycles}")
 
         last_valid = self.check_min_repeate_units(last_time_cycles,
                                                     procent_quitting = last_procent)
+        logging.info(f"last_valid = {last_valid}")
+        print(f"last_valid = {last_valid}")
         
         dict_val_train = self.different_arrays(dataFrame,
                                                np_train,
@@ -444,18 +472,26 @@ class PrepData:
             diff_df = genfromtxt(diff_file_csv_path, delimiter=',')
         
         else:
-            print("ОШИБКА, ВЫБЕРИТЕ ЛИБО ЗАГРУЗКУ ИЗ ФАЙЛА, ЛИБО ИЗ ОБЪЕКТА")
+            logging.error("ОШИБКА, ВЫБЕРИТЕ ЛИБО ЗАГРУЗКУ ИЗ ФАЙЛА, ЛИБО ИЗ ОБЪЕКТА")
             return [0], [0]
 
         df_1, df_2 = train_test_split(diff_df,
                                       random_state=0,
                                       train_size = procent_train)
-        
+                
         if out_path_file_1 != "":
+            logging.info(f"df_1 = {df_1.shape}")
+            logging.info(f"new_file_name_1 = {new_file_name_1}")
+            logging.info(f"out_path_file_1 = {out_path_file_1}")
+
             np.savetxt(os.path.join(out_path_file_1, new_file_name_1),
                        df_1, delimiter=",")
         
         if out_path_file_2 != "":
+            logging.info(f"df_2 = {df_2.shape}")
+            logging.info(f"new_file_name_2 = {new_file_name_2}")
+            logging.info(f"out_path_file_2 = {out_path_file_2}")
+
             np.savetxt(os.path.join(out_path_file_2, new_file_name_2),
                        df_2, delimiter=",")
         
@@ -588,8 +624,13 @@ class PrepData:
         status_log = ["Standartization dataframe successfull", "Standartization dataframe error"]
 
         # dataFrame = self.add_col_indexes(dataFrame)
+        logging.info(f"START delete_names")
         dataFrame = self.delete_names(dataFrame)
-        dataFrame = self.delete_nan_str(dataFrame)
+        logging.info(f"FINISH delete_names")
+
+        # logging.info(f"START delete_nan_str")
+        # dataFrame = self.delete_nan_str(dataFrame)
+        # logging.info(f"FINISH delete_nan_str")
 
         self.out_info(True, status_log[0])
         return dataFrame
@@ -607,8 +648,7 @@ class PrepData:
         indexses = []
         coef_if_empty = 0
 
-        print("str -->", str_count,
-            "\ncol -->", col_count)
+        logging.info("str -->", str_count, "\ncol -->", col_count)
 
         if (self.is_nan_dataFrame_Line(dataFrame[0, :])):
             indexses.append(np.nan)
@@ -844,6 +884,7 @@ class PrepData:
         current_str_num = 0
         count = 0
 
+        logging.info("START different_arrays")
         for index, str in enumerate(unit_np_DF):
 
             unit_number = unit_np_DF[index, 0]
@@ -880,7 +921,7 @@ class PrepData:
 
     @classmethod
     def out_info(self, status: bool, text: str):
-        print(text)
+        logging.info(text)
         self.status = status
 
 

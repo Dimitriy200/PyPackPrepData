@@ -4,18 +4,85 @@
 import sys
 import os
 import numpy as np
+import logging
 
 from prepData import PrepData
 
+logging.basicConfig(level=logging.INFO,
+                    filename=os.path.join(os.path.abspath("preprocess-data"),"src", "prepData", "logs", "prep_data_logs.log" ),
+                    filemode="w",
+                    format="%(asctime)s %(levelname)s %(message)s")
 
 base_dir = os.path.abspath("diplom_autoencoder")
 dir_final = os.path.join(base_dir, "data", "final")
 dir_processed = os.path.join(base_dir, "data", "processed")
+dir_raw = os.path.join(base_dir, "data", "raw")
 
 # dir_normaly = os.path.join(base_dir, "data", "raw", "NORMALY")
 # dir_anomaly = os.path.join(base_dir, "data", "raw", "ANOMALY")
 
 
+
+#--------------------------------------------------------------------
+def repl_numpy():
+    pr = PrepData()
+    arr = np.array(
+        [[1, 2, 2],
+         [1, 3, 4],
+         [2, 3, 4],
+         [3, 7, 5]])
+    
+    a = arr[:, 0] + 1
+    b = arr[:, 1:]
+
+    res = np.column_stack((a, b))
+
+    print(res)
+
+# repl_numpy()
+
+#--------------------------------------------------------------------
+
+def repl_df():
+    pr = PrepData()
+    # FD_001 - 100
+    # FD_002 - 260
+    # FD_003 - 100
+    # FD_004 - 249
+
+    fd_1 = pr.get_np_arr_from_csv(os.path.join(dir_raw, "train", "train_FD001.csv"))
+    fd_2 = pr.get_np_arr_from_csv(os.path.join(dir_raw, "train", "train_FD002.csv"))
+    fd_3 = pr.get_np_arr_from_csv(os.path.join(dir_raw, "train", "train_FD003.csv"))
+    fd_4 = pr.get_np_arr_from_csv(os.path.join(dir_raw, "train", "train_FD004.csv"))
+
+    
+    un_2 = fd_2[:, 0] + 100
+    buf_2 = fd_2[:, 1:]
+    res_fd_2 = np.column_stack((un_2, buf_2))
+
+    un_3 = fd_3[:, 0] + 100 + 260
+    buf_3 = fd_3[:, 1:]
+    res_fd_3 = np.column_stack((un_3, buf_3))
+
+    un_4 = fd_4[:, 0] + 100 + 260 + 100
+    buf_4 = fd_4[:, 1:]
+    res_fd_4 = np.column_stack((un_4, buf_4))
+
+    print(f"un_2 = {res_fd_2[1, 0]}")
+    print(f"un_3 = {res_fd_3[1, 0]}")
+    print(f"un_4 = {res_fd_4[1, 0]}")
+
+    # res = np.concatenate([fd_1, res_fd_2, res_fd_3, res_fd_4])
+
+    # np.savetxt(os.path.join(dir_raw, "new_train", "new_all_train.csv"), res, delimiter=',')
+
+
+    # np.savetxt(os.path.join(dir_raw, "new_train", "new_train_FD001.csv"), fd_1, delimiter=',')
+    np.savetxt(os.path.join(dir_raw, "new_train", "new_train_FD002.csv"), res_fd_2, delimiter=',')
+    np.savetxt(os.path.join(dir_raw, "new_train", "new_train_FD003.csv"), res_fd_3, delimiter=',')
+    np.savetxt(os.path.join(dir_raw, "new_train", "new_train_FD004.csv"), res_fd_4,  delimiter=',')
+
+# repl_df()
 
 #--------------------------------------------------------------------
 
@@ -34,18 +101,40 @@ def check_start_all_func_json(dir_final = dir_final,
 #--------------------------------------------------------------------
 
 
-def check_start_all_func_csv(dir_final = dir_final,
+def check_different_anomaly(dir_final = dir_final,
                              dir_processed = dir_processed,
-                             dir_raw = os.path.join(base_dir, "data", "raw", "for_tests")):
+                             dir_raw = os.path.join(base_dir, "data", "raw", "new_train"),
+                             last_procent = 0.1):
 
     pr = PrepData()
-    pr.start_prepData_csv(dir_raw,
-                           dir_processed,
-                           dir_final)
+    data = pr.get_np_arr_from_csv(os.path.join(dir_raw, "new_all_train.csv"))
 
-# check_start_all_func_csv()
+    pr.different_anomaly(dataFrame=data,
+                         out_path_normal = os.path.join(dir_raw),
+                         out_path_anomal = os.path.join(dir_raw),
+                         Name_Normal_DF = "test_norm.csv",
+                         Name_Anomal_DF = "test_anom.csv",
+                         last_procent = last_procent)
+
+check_different_anomaly()
 
 #--------------------------------------------------------------------
+
+
+def check_employ_pipeline():
+
+    pr = PrepData()
+    data = pr.get_np_arr_from_csv(os.path.join(dir_raw, "new_train", "new_all_train.csv"))
+
+    prep_data = pr.employ_Pipline(array_np = data)
+
+    np.savetxt(os.path.join(dir_raw, "new_train", "prep_new_all_train.csv"), prep_data, delimiter=',')
+
+
+# check_employ_pipeline()
+#--------------------------------------------------------------------
+
+
 def check_start_prepData_for_add_traine(dir_final = os.path.join(dir_final, "train_test_json"),
                                         dir_raw = os.path.join(base_dir, "data", "raw", "2024-06-02_2024-06-03_2024-06-04")):
 
@@ -55,10 +144,9 @@ def check_start_prepData_for_add_traine(dir_final = os.path.join(dir_final, "tra
                                      Name_file_train = "train_json.csv",
                                      Name_file_test = "test_json.csv")
 
-check_start_prepData_for_add_traine()
+# check_start_prepData_for_add_traine()
 
 #--------------------------------------------------------------------
-
 
 def check_start_all_func_csv(dir_final = dir_final,
                          dir_processed = dir_processed,
