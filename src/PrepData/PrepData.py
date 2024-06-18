@@ -126,9 +126,7 @@ class PrepData:
         # Получаем стандартизированный и нормированный датасет
         logging.info("START PIPELINE")
         prep_dataset = self.employ_Pipline(dataset_np)
-
         logging.info(f"prep_dataset = {prep_dataset.shape}")
-
 
         # Разделяем датасет на нормальные и аномальные значеиня
         logging.info("START DIFFERENT TO NORMAL AND ANOMAL")
@@ -143,12 +141,12 @@ class PrepData:
         path_anomal = os.path.join(path_processed, name_dir_anom_data)
 
         # Отделить нормальные данные
-        main_Norm_and_anom_dict = self.different_anomaly(prep_dataset,
+        main_Norm_and_anom_dict = self.different_anomaly_normal(prep_dataset,
                                                     out_path_normal = path_normal,
                                                     out_path_anomal = path_anomal,
                                                     Name_Normal_DF = name_file_norm_data,
                                                     Name_Anomal_DF = name_file_anom_data,
-                                                    last_procent = .75)
+                                                    last_procent = .05)
 
         logging.info(f"main_norm_and_anom_dict [Normal] = {main_Norm_and_anom_dict['Normal'].shape}")
         logging.info(f"main_norm_and_anom_dict [Anomal] = {main_Norm_and_anom_dict['Anomal'].shape}")
@@ -160,7 +158,7 @@ class PrepData:
                                                     out_path_anomal = path_anomal,
                                                     Name_Normal_DF = name_file_norm_data,
                                                     Name_Anomal_DF = name_file_anom_data,
-                                                    last_procent = 0.1)
+                                                    last_procent = .05)
         
         logging.info(f"main_anom_and_norm_dict Normal = {main_Anom_and_norm_dict['Normal'].shape}")
         logging.info(f"main_anom_and_norm_dict Anomal = {main_Anom_and_norm_dict['Anomal'].shape}")
@@ -427,6 +425,48 @@ class PrepData:
 
         return dict_val_train
 
+
+    @classmethod
+    def different_anomaly_normal(self,
+                                 dataFrame: np.array,
+                                 out_path_normal: str,
+                                 out_path_anomal: str,
+                                 Name_Normal_DF,
+                                 Name_Anomal_DF,
+                                 last_procent: int = 0.1) -> dict:
+
+        # list_units = os.listdir(inp_path)
+
+
+        str_df, col_df = dataFrame.shape
+
+        np_train = np.zeros(col_df)
+        np_valid = np.zeros(col_df)
+
+        # for unit in list_units:
+
+            # unit_numbers = unit_np_DF[:, 1]
+        unit_numbers = dataFrame[:, 0].tolist()
+
+        last_time_cycles = self.array_of_outer_row_formation(dataFrame)
+        logging.info(f"last_time_cycles = {last_time_cycles}")
+        # print(f"last_time_cycles = {last_time_cycles}")
+
+        last_valid = self.check_min_repeate_units(last_time_cycles,
+                                                    procent_quitting = last_procent)
+        logging.info(f"last_valid = {last_valid}")
+        # print(f"last_valid = {last_valid}")
+        
+        dict_val_train = self.different_arrays_normal(dataFrame,
+                                                      np_train,
+                                                      np_valid,
+                                                      last_valid,
+                                                      last_time_cycles)
+        
+        # np.savetxt(os.path.join(out_path_normal, Name_Normal_DF), dict_val_train['Normal'], delimiter=",")
+        # np.savetxt(os.path.join(out_path_anomal, Name_Anomal_DF), dict_val_train['Anomal'], delimiter=",")
+
+        return dict_val_train
 
     @classmethod
     def different_train_and_valid(self,
@@ -904,7 +944,7 @@ class PrepData:
 
 
     @classmethod
-    #Разделение на два массива
+    #Разделение на два массива для аномальных
     def different_arrays(self,
                          unit_np_DF: np.array,
                          np_train: np.array, 
@@ -956,6 +996,63 @@ class PrepData:
 
         return {'Normal': np_train,
                 'Anomal': np_valid}
+
+
+    @classmethod
+    #Разделение на два массива для нормальных
+    def different_arrays_normal(self,
+                         unit_np_DF: np.array,
+                         np_norm: np.array, 
+                         np_anom: np.array,
+                         last_valid: int,
+                         last_time_cycles: list):
+
+        # count_unit_number = unit_np_DF[1, 0]
+        count_unit_number = 0
+        count_time_cycles = 1
+        current_str_num = 0
+        count = 0
+
+        last_time_cycles.insert(0, 0)
+
+        logging.info("START different_arrays")
+        for index, str in enumerate(unit_np_DF):
+
+            unit_number = unit_np_DF[index, 0]
+
+            # if index == len(unit_np_DF) - 1:
+                
+            #     continue
+            
+            if count_unit_number == 0:
+                count_unit_number = unit_number
+                continue
+
+            if count_unit_number != unit_number:
+                if index == len(unit_np_DF) - 1:
+                    np_norm = np.vstack((np_norm, str))
+                    continue
+                count += 1
+                count_unit_number = unit_number
+
+            barrer = last_time_cycles[count] + last_valid
+
+            if index <= barrer:
+                np_norm = np.vstack((np_norm, str))
+            
+            else:
+                np_anom = np.vstack((np_anom, str))
+
+            # count_time_cycles += 1
+            # current_str_num += 1
+            # logging.info(f"np_train = {np_train[:2, :]}")
+            # logging.info(f"np_train = {np_valid[:2, :]}")
+
+        np_norm = np_norm[1:, :]
+        np_anom = np_anom[1:, :]
+
+        return {'Normal': np_norm,
+                'Anomal': np_anom}
 
 
     @classmethod

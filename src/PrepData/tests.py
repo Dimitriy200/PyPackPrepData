@@ -138,12 +138,13 @@ def check_start_all_func_json(dir_final = dir_final,
 
 #--------------------------------------------------------------------
 
-file_train = os.path.join(base_dir, "data", "raw", "new_train", "new_all_train.csv")
-file_test = os.path.join(base_dir, "data", "raw", "new_train", "new_train_FD001.csv")
 
-def check_start_prepData_csv(dir_final = dir_final,
-                             dir_processed = dir_processed,
-                             dir_raw = file_test): #prep_new_all_train.csv
+file_train = os.path.join(base_dir, "data", "raw", "new_train", "new_all_train.csv")
+file_test = os.path.join(dir_raw, "new_train", "new_train_FD001.csv")
+
+def check_start_prepData_csv(dir_raw = file_train,
+                             dir_final = dir_final,
+                             dir_processed = dir_processed): #prep_new_all_train.csv
     
     pr = PrepData()
     pr.start_prepData_csv(path_raw = dir_raw,
