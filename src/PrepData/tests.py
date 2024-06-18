@@ -32,10 +32,12 @@ def repl_numpy():
          [2, 3, 4],
          [3, 7, 5]])
     
-    a = arr[:, 0] + 1
-    b = arr[:, 1:]
+    # a = arr[:, 0] + 1
+    # b = arr[:, 1:]
 
-    res = np.column_stack((a, b))
+    # res = np.column_stack((a, b))
+
+    res = arr[1:, :]
 
     print(res)
 
@@ -136,10 +138,12 @@ def check_start_all_func_json(dir_final = dir_final,
 
 #--------------------------------------------------------------------
 
+file_train = os.path.join(base_dir, "data", "raw", "new_train", "new_all_train.csv")
+file_test = os.path.join(base_dir, "data", "raw", "new_train", "new_train_FD001.csv")
 
 def check_start_prepData_csv(dir_final = dir_final,
                              dir_processed = dir_processed,
-                             dir_raw = os.path.join(base_dir, "data", "raw", "new_train", "new_all_train.csv")): #prep_new_all_train.csv
+                             dir_raw = file_test): #prep_new_all_train.csv
     
     pr = PrepData()
     pr.start_prepData_csv(path_raw = dir_raw,
@@ -155,18 +159,43 @@ check_start_prepData_csv()
 
 def check_different_anomaly(dir_final = dir_final,
                              dir_processed = dir_processed,
-                             dir_raw = os.path.join(base_dir, "data", "raw", "new_train"),
+                             dir_raw = os.path.join(base_dir, "data", "raw",),
                              last_procent = 0.2):
 
     pr = PrepData()
-    data = pr.get_np_arr_from_csv(os.path.join(dir_raw, "prep_new_all_train.csv")) #new_train_FD001.csv
+    data = pr.get_np_arr_from_csv(os.path.join(dir_raw, "new_train", "new_train_FD001.csv")) #new_train_FD001.csv
 
-    pr.different_anomaly(dataFrame=data,
-                         out_path_normal = os.path.join(dir_raw),
-                         out_path_anomal = os.path.join(dir_raw),
-                         Name_Normal_DF = "test_norm.csv",
-                         Name_Anomal_DF = "test_anom.csv",
-                         last_procent = last_procent)
+    out_path = os.path.join(dir_raw, "tests")
+    
+    d_norm_and_anom = pr.different_anomaly(dataFrame=data,
+                                            out_path_normal = out_path,
+                                            out_path_anomal = out_path,
+                                            Name_Normal_DF = "test_norm.csv",
+                                            Name_Anomal_DF = "test_anom.csv",
+                                            last_procent = 0.7)
+    
+
+    logging.info(f"d_norm_and_anom [Normal] = {d_norm_and_anom['Normal'].shape}")
+    logging.info(f"d_norm_and_anom [Anomal] = {d_norm_and_anom['Anomal'].shape}")
+    np.savetxt(os.path.join(out_path, "test_Norm_1.csv"), d_norm_and_anom['Normal'], delimiter=",")
+    np.savetxt(os.path.join(out_path, "test_Anom_1.csv"), d_norm_and_anom['Anomal'], delimiter=",")
+
+
+    
+    np_anom = d_norm_and_anom['Anomal']
+    d_new_norm_and_anom = pr.different_anomaly(dataFrame = np_anom,
+                                            out_path_normal = out_path,
+                                            out_path_anomal = out_path,
+                                            Name_Normal_DF = "test_norm.csv",
+                                            Name_Anomal_DF = "test_anom.csv",
+                                            last_procent = 0.1)
+    
+
+    logging.info(f"d_new_norm_and_anom [Normal] = {d_new_norm_and_anom['Normal'].shape}")
+    logging.info(f"d_new_norm_and_anom [Anomal] = {d_new_norm_and_anom['Anomal'].shape}")
+    np.savetxt(os.path.join(out_path, "test_Norm_2.csv"), d_new_norm_and_anom['Normal'], delimiter=",")
+    np.savetxt(os.path.join(out_path, "test_Anom_2.csv"), d_new_norm_and_anom['Anomal'], delimiter=",")
+
     
 
 # check_different_anomaly()

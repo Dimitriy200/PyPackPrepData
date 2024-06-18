@@ -142,18 +142,34 @@ class PrepData:
         path_normal = os.path.join(path_processed, name_dir_norm_data)
         path_anomal = os.path.join(path_processed, name_dir_anom_data)
 
-        norm_and_anom_dict = self.different_anomaly(prep_dataset,
+        # Отделить нормальные данные
+        main_Norm_and_anom_dict = self.different_anomaly(prep_dataset,
                                                     out_path_normal = path_normal,
                                                     out_path_anomal = path_anomal,
                                                     Name_Normal_DF = name_file_norm_data,
                                                     Name_Anomal_DF = name_file_anom_data,
-                                                    last_procent = last_procent)
+                                                    last_procent = .75)
 
-        norm_df = norm_and_anom_dict["Normal"]
-        anom_df = norm_and_anom_dict["Anomal"]
+        logging.info(f"main_norm_and_anom_dict [Normal] = {main_Norm_and_anom_dict['Normal'].shape}")
+        logging.info(f"main_norm_and_anom_dict [Anomal] = {main_Norm_and_anom_dict['Anomal'].shape}")
+        np.savetxt(os.path.join(path_normal, name_file_norm_data), main_Norm_and_anom_dict['Normal'], delimiter=",")
+
+        # Отделить аномальные данные
+        main_Anom_and_norm_dict = self.different_anomaly(main_Norm_and_anom_dict['Anomal'],
+                                                    out_path_normal = path_normal,
+                                                    out_path_anomal = path_anomal,
+                                                    Name_Normal_DF = name_file_norm_data,
+                                                    Name_Anomal_DF = name_file_anom_data,
+                                                    last_procent = 0.1)
+        
+        logging.info(f"main_anom_and_norm_dict Normal = {main_Anom_and_norm_dict['Normal'].shape}")
+        logging.info(f"main_anom_and_norm_dict Anomal = {main_Anom_and_norm_dict['Anomal'].shape}")
+        np.savetxt(os.path.join(path_anomal, name_file_anom_data), main_Anom_and_norm_dict['Anomal'], delimiter=",")
+
+        norm_df = main_Norm_and_anom_dict["Normal"]
+        anom_df = main_Anom_and_norm_dict["Anomal"]
         logging.info(f"norm = {norm_df.shape}")
         logging.info(f"anom = {anom_df.shape}")   
-        
 
         # Делим ANOM данные в соотношении 80/20, где 20% - данные для статичесской валидации
         logging.info("START DIFFERENT ANOMAL TO 80 / 20 (STATIC VALIDATE)")
@@ -172,7 +188,6 @@ class PrepData:
         logging.info(f"first_diff_Anomal_data = {first_diff_Anomal_data.shape}")
         logging.info(f"static_valid_Anomal_data = {static_valid_Anomal_data.shape}")
 
-        
         # Делим NORM данные в соотношении 80/20, где 20% - данные для статичесской валидации
         logging.info("START DIFFERENT NORMAL TO 80 / 20 (STATIC VALIDATE)")
 
@@ -187,7 +202,6 @@ class PrepData:
 
         logging.info(f"first_diff_Normal_data = {first_diff_Normal_data.shape}")
         logging.info(f"static_valid_Normal_data = {static_valid_Normal_data.shape}")
-        
         
         # Делим оставшиеся ANOM данные на данные для подбора и контроля барьера
         logging.info("START DIFFERENT ANOMAL TO 80 / 20 (CHOISE AND CONTROL BARRIER)")
@@ -395,12 +409,12 @@ class PrepData:
 
         last_time_cycles = self.array_of_outer_row_formation(dataFrame)
         logging.info(f"last_time_cycles = {last_time_cycles}")
-        print(f"last_time_cycles = {last_time_cycles}")
+        # print(f"last_time_cycles = {last_time_cycles}")
 
         last_valid = self.check_min_repeate_units(last_time_cycles,
                                                     procent_quitting = last_procent)
         logging.info(f"last_valid = {last_valid}")
-        print(f"last_valid = {last_valid}")
+        # print(f"last_valid = {last_valid}")
         
         dict_val_train = self.different_arrays(dataFrame,
                                                np_train,
@@ -408,8 +422,8 @@ class PrepData:
                                                last_valid,
                                                last_time_cycles)
         
-        np.savetxt(os.path.join(out_path_normal, Name_Normal_DF), dict_val_train['Normal'], delimiter=",")
-        np.savetxt(os.path.join(out_path_anomal, Name_Anomal_DF), dict_val_train['Anomal'], delimiter=",")
+        # np.savetxt(os.path.join(out_path_normal, Name_Normal_DF), dict_val_train['Normal'], delimiter=",")
+        # np.savetxt(os.path.join(out_path_anomal, Name_Anomal_DF), dict_val_train['Anomal'], delimiter=",")
 
         return dict_val_train
 
@@ -934,6 +948,11 @@ class PrepData:
 
             # count_time_cycles += 1
             # current_str_num += 1
+            # logging.info(f"np_train = {np_train[:2, :]}")
+            # logging.info(f"np_train = {np_valid[:2, :]}")
+
+        np_train = np_train[1:, :]
+        np_valid = np_valid[1:, :]
 
         return {'Normal': np_train,
                 'Anomal': np_valid}
